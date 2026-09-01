@@ -42,6 +42,30 @@ func _run() -> void:
 	_assert_true(arena.enemies.size() >= 20, "horde director spawns enemies")
 	_assert_true(arena.projectile_pool.size() >= 180, "projectile pool is prewarmed")
 	_assert_true(arena.enemy_pool.size() >= 180, "enemy pool is prewarmed")
+	var previous_auto_potion: bool = Game.settings.auto_potion
+	var previous_auto_barrier: bool = Game.settings.auto_barrier
+	arena.god_mode = true
+	Game.settings.auto_potion = true
+	arena.player.health = arena.player.max_health * 0.3
+	arena.player.potion_charges = 2
+	arena.player.potion_timer = 0.0
+	arena.player._process(1.0 / 60.0)
+	_assert_true(arena.player.potion_charges == 1 and arena.player.health > arena.player.max_health * 0.3, "auto-potion triggers below 35% health")
+	Game.settings.auto_potion = false
+	Game.settings.auto_barrier = true
+	arena.player.max_barrier = 0.0
+	arena.player.barrier = 0.0
+	arena.player.e_timer = 0.0
+	arena.player._process(1.0 / 60.0)
+	_assert_true(arena.player.e_timer > 0.0 and arena.player.barrier > 0.0, "auto-barrier triggers when depleted near enemies")
+	var secondary_before := arena.player.secondary_timer
+	var meteor_before := arena.player.q_timer
+	var ultimate_before := arena.player.ultimate_charge
+	arena.player._process(1.0 / 60.0)
+	_assert_true(arena.player.secondary_timer <= secondary_before and arena.player.q_timer <= meteor_before and arena.player.ultimate_charge == ultimate_before, "other combat skills remain manual")
+	Game.settings.auto_potion = previous_auto_potion
+	Game.settings.auto_barrier = previous_auto_barrier
+	arena.god_mode = false
 	var movement_origin := arena.player.global_position
 	Input.action_press("move_right")
 	arena.player._process(0.1)

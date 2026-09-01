@@ -87,18 +87,34 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("skill_q") and q_timer <= 0.0:
 		q_timer = 5.5 * (1.0 - minf(Game.stat_total("cooldown") / 100.0, 0.65))
 		ability_requested.emit("meteor", get_global_mouse_position(), facing)
-	if Input.is_action_just_pressed("skill_e") and e_timer <= 0.0:
-		e_timer = 7.0 * (1.0 - minf(Game.stat_total("cooldown") / 100.0, 0.65))
-		ability_requested.emit("barrier", global_position, facing)
+	var manual_barrier := Input.is_action_just_pressed("skill_e")
+	var automatic_barrier := Game.settings.auto_barrier and _should_auto_barrier(auto_target)
+	if (manual_barrier or automatic_barrier) and e_timer <= 0.0:
+		_use_barrier()
 	if Input.is_action_just_pressed("ultimate") and ultimate_charge >= 1.0:
 		ultimate_charge = 0.0
 		ability_requested.emit("ultimate", global_position, facing)
-	if Input.is_action_just_pressed("potion") and potion_charges > 0 and potion_timer <= 0.0 and health < max_health:
-		potion_charges -= 1
-		potion_timer = 18.0
-		heal(max_health * (0.35 + Game.stat_total("potion_power") / 100.0))
-		ability_requested.emit("potion", global_position, facing)
+	var manual_potion := Input.is_action_just_pressed("potion")
+	var automatic_potion := Game.settings.auto_potion and health / maxf(max_health, 1.0) <= 0.35
+	if (manual_potion or automatic_potion) and potion_charges > 0 and potion_timer <= 0.0 and health < max_health:
+		_use_potion()
 	queue_redraw()
+
+func _should_auto_barrier(target: Node2D) -> bool:
+	if not is_instance_valid(target): return false
+	if global_position.distance_squared_to(target.global_position) > 850.0 * 850.0: return false
+	var expected_capacity := maxf(max_barrier, 70.0)
+	return barrier <= expected_capacity * 0.35
+
+func _use_barrier() -> void:
+	e_timer = 7.0 * (1.0 - minf(Game.stat_total("cooldown") / 100.0, 0.65))
+	ability_requested.emit("barrier", global_position, facing)
+
+func _use_potion() -> void:
+	potion_charges -= 1
+	potion_timer = 18.0
+	heal(max_health * (0.35 + Game.stat_total("potion_power") / 100.0))
+	ability_requested.emit("potion", global_position, facing)
 
 func fire_attack() -> void:
 	attack_counter += 1

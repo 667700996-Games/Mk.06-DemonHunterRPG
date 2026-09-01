@@ -459,6 +459,8 @@ func show_settings() -> void:
 	right.custom_minimum_size.x = 610
 	right.add_theme_constant_override("separation", 10)
 	right.add_child(UIFactory.heading("AUDIO & ACCESSIBILITY", 24, UIFactory.CYAN))
+	_add_toggle(right, "AUTO POTION  •  HP ≤ 35%", "auto_potion")
+	_add_toggle(right, "AUTO BARRIER  •  LOW / EMPTY", "auto_barrier")
 	_add_slider(right, "MASTER VOLUME", "master_volume", 0.0, 1.0, 0.05)
 	_add_slider(right, "MUSIC VOLUME", "music_volume", 0.0, 1.0, 0.05)
 	_add_slider(right, "SFX VOLUME", "sfx_volume", 0.0, 1.0, 0.05)

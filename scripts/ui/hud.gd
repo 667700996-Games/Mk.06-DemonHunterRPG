@@ -355,7 +355,7 @@ func show_pause() -> void:
 	var settings_button := UIFactory.button("SETTINGS & ACCESSIBILITY")
 	settings_button.pressed.connect(show_ingame_settings)
 	box.add_child(settings_button)
-	var settings_note := UIFactory.label("Accessibility settings are available from the title screen.\nAuto-attack: %s  •  Screen shake: %d%%" % ["ON" if Game.settings.auto_attack else "OFF", int(Game.settings.screen_shake * 100)], 17, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
+	var settings_note := UIFactory.label("Accessibility settings are available from the title screen.\nAttack %s  •  Potion %s  •  Barrier %s" % ["AUTO" if Game.settings.auto_attack else "MANUAL", "AUTO" if Game.settings.auto_potion else "MANUAL", "AUTO" if Game.settings.auto_barrier else "MANUAL"], 17, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	settings_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(settings_note)
 	var menu := UIFactory.button("ABANDON RIFT")
@@ -371,7 +371,7 @@ func show_ingame_settings() -> void:
 	box.custom_minimum_size = Vector2(680, 690)
 	box.add_theme_constant_override("separation", 12)
 	box.add_child(UIFactory.heading("ACCESSIBILITY", 42, UIFactory.GOLD))
-	for entry in [["AUTO ATTACK", "auto_attack"], ["GAMEPAD VIBRATION", "gamepad_vibration"]]:
+	for entry in [["AUTO ATTACK", "auto_attack"], ["AUTO POTION  •  HP ≤ 35%", "auto_potion"], ["AUTO BARRIER  •  LOW / EMPTY", "auto_barrier"], ["GAMEPAD VIBRATION", "gamepad_vibration"]]:
 		var row := HBoxContainer.new()
 		var title := UIFactory.label(entry[0], 19, UIFactory.TEXT)
 		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL

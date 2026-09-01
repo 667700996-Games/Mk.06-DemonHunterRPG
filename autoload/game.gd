@@ -15,6 +15,7 @@ var settings := {
 	"music_volume": 0.6, "sfx_volume": 0.8, "ui_volume": 0.8, "screen_shake": 0.75,
 	"damage_numbers": 0.75, "flash_intensity": 0.7, "auto_attack": true,
 	"gamepad_vibration": true, "ui_scale": 1.0, "hold_to_attack": true,
+	"auto_potion": false, "auto_barrier": false,
 	"auto_salvage_common": false, "auto_salvage_magic": false, "auto_salvage_rare": false
 }
 var meta := {
