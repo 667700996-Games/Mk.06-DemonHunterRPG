@@ -10,10 +10,11 @@ const SAVE_VERSION := 1
 const SLOTS := ["weapon", "head", "chest", "gloves", "boots", "amulet", "ring_1", "ring_2"]
 
 var settings := {
-	"fullscreen": false, "vsync": true, "fps_limit": 120, "master_volume": 0.8,
+	"fullscreen": false, "resolution": "1920x1080", "vsync": true, "fps_limit": 120, "master_volume": 0.8,
 	"music_volume": 0.6, "sfx_volume": 0.8, "ui_volume": 0.8, "screen_shake": 0.75,
 	"damage_numbers": 0.75, "flash_intensity": 0.7, "auto_attack": true,
-	"gamepad_vibration": true, "ui_scale": 1.0, "hold_to_attack": true
+	"gamepad_vibration": true, "ui_scale": 1.0, "hold_to_attack": true,
+	"auto_salvage_common": false, "auto_salvage_magic": false, "auto_salvage_rare": false
 }
 var meta := {
 	"currency": 0, "highest_tier": 1, "unlocked_tier": 1, "starting_gold": 0,
@@ -37,9 +38,17 @@ func hydrate(data: Dictionary) -> void:
 	_merge_known(meta, data.get("meta", {}))
 	_merge_known(statistics, data.get("statistics", {}))
 	inventory.assign(data.get("inventory", []))
+	for index in inventory.size(): inventory[index] = _normalize_item(inventory[index])
 	var saved_equipment: Dictionary = data.get("equipment", {})
-	for slot in SLOTS: equipment[slot] = saved_equipment.get(slot, {})
+	for slot in SLOTS: equipment[slot] = _normalize_item(saved_equipment.get(slot, {}))
 	apply_settings()
+
+func _normalize_item(item: Dictionary) -> Dictionary:
+	if item.is_empty(): return item
+	var colors := [Color("#d8dde8"), Color("#58a6ff"), Color("#ffd166"), Color("#b778ff"), Color("#ff7b36"), Color("#ff3fb4")]
+	var rarity_index := clampi(int(item.get("rarity_index", 0)), 0, colors.size() - 1)
+	item["color"] = colors[rarity_index]
+	return item
 
 func _merge_known(target: Dictionary, source: Dictionary) -> void:
 	for key in source:
@@ -84,8 +93,7 @@ func finish_run(cleared: bool) -> Dictionary:
 	run_ended.emit(result)
 	return result
 
-func register_item(item: Dictionary) -> void:
-	inventory.push_front(item)
+func register_item(item: Dictionary) -> bool:
 	current_run.items = current_run.get("items", 0) + 1
 	var rarity: String = item.get("rarity", "Common")
 	current_run.rarities[rarity] = current_run.rarities.get(rarity, 0) + 1
@@ -94,8 +102,15 @@ func register_item(item: Dictionary) -> void:
 		meta.pity = 0
 	else:
 		meta.pity += 1
+	var salvage_key := "auto_salvage_" + rarity.to_lower()
+	if settings.get(salvage_key, false) and rarity in ["Common", "Magic", "Rare"]:
+		meta.currency += maxi(1, int(item.get("item_level", 1) * (item.get("rarity_index", 0) + 1) * 0.6))
+		inventory_changed.emit()
+		return false
+	inventory.push_front(item)
 	if inventory.size() > 80: auto_salvage()
 	inventory_changed.emit()
+	return true
 
 func equip_item(item: Dictionary) -> void:
 	var slot: String = item.get("slot", "weapon")
@@ -163,6 +178,21 @@ func legendary_effects() -> Dictionary:
 	for slot in equipment:
 		var power: Dictionary = equipment[slot].get("legendary", {})
 		if not power.is_empty(): output[power.effect] = power.value
+	for upgrade in current_run.get("upgrades", []):
+		var stat: String = upgrade.get("stat", "")
+		if stat in ["fifth_lightning", "crit_explode", "frost_shatter", "dash_fire", "kill_split", "lowhealth_speed", "speed_damage", "summon"]:
+			output[stat] = upgrade.get("value", 1.0)
+	var evolution_map := {
+		"storm_god": ["chain", 8.0], "crimson_end": ["bleed_execute", 28.0],
+		"white_silence": ["frost_shatter", 8.0], "funeral_sun": ["burn_explode", 180.0],
+		"death_company": ["elite_summon", 2.0], "void_lens": ["void_well", 35.0],
+		"serpent_world": ["eternal_poison", 3.0], "razor_comet": ["dash_strike", 1.0],
+		"furnace_soul": ["barrier_burn", 160.0], "last_eclipse": ["last_stand", 3.0]
+	}
+	for evolution_id in current_run.get("evolutions", []):
+		if evolution_map.has(evolution_id):
+			var mapping: Array = evolution_map[evolution_id]
+			output[mapping[0]] = mapping[1]
 	return output
 
 func apply_settings() -> void:
@@ -172,5 +202,7 @@ func apply_settings() -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		var dimensions: PackedStringArray = str(settings.resolution).split("x")
+		if dimensions.size() == 2:
+			DisplayServer.window_set_size(Vector2i(dimensions[0].to_int(), dimensions[1].to_int()))
 	settings_changed.emit()
-

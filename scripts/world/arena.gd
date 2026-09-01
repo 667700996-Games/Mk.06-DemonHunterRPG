@@ -13,12 +13,17 @@ const DamageNumberScript = preload("res://scripts/effects/damage_number.gd")
 const DangerZoneScript = preload("res://scripts/effects/danger_zone.gd")
 const ShrineScript = preload("res://scripts/world/shrine.gd")
 const HUDScript = preload("res://scripts/ui/hud.gd")
+const DebugMenuScript = preload("res://scripts/ui/debug_menu.gd")
+const SummonScript = preload("res://scripts/entities/summon.gd")
+const AmbientMotesScript = preload("res://scripts/effects/ambient_motes.gd")
 
 var world: Node2D
 var player: RiftPlayer
 var camera: Camera2D
 var hud: RiftHUD
 var flash_rect: ColorRect
+var debug_menu: CanvasLayer
+var ambient_motes: Node2D
 var biome: Dictionary
 
 var enemy_pool: Array[RiftEnemy] = []
@@ -34,12 +39,13 @@ var bursts: Array[ImpactBurst] = []
 var numbers: Array[DamageNumber] = []
 var zones: Array[DangerZone] = []
 var shrines: Array[RiftShrine] = []
+var summons: Array[Node2D] = []
 
 var frame_index := 0
 var spawn_accumulator := 0.0
 var elite_timer := 13.0
 var rift_progress := 0.0
-var rift_goal := 1500.0
+var rift_goal := 8000.0
 var boss_started := false
 var current_boss: RiftEnemy
 var ending := false
@@ -58,21 +64,32 @@ var latest_item: Dictionary = {}
 var pending_level_ups := 0
 var current_upgrade_options: Array[Dictionary] = []
 var kill_xp_bank := 0.0
+var god_mode := false
+var summon_refresh_timer := 0.0
+var passive_effect_timer := 0.0
+var recent_hits: Array[float] = []
+var banished_upgrade_ids: Array[String] = []
+var locked_upgrade_ids: Array[String] = []
+var favored_upgrade_tag := ""
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	biome = DataRegistry.get_biome(Game.current_run.biome)
-	rift_goal = 1500.0 + Game.current_run.tier * 150.0
+	rift_goal = 8000.0 + Game.current_run.tier * 400.0
 	_build_scene()
 	_build_pools()
 	_connect_ui()
-	AudioManager.play_music("combat")
+	AudioManager.play_music("combat_" + Game.current_run.biome)
 	hud.announce("RIFT OPENED  •  HUNT", biome.accent, 1.2)
 
 func _build_scene() -> void:
 	world = WorldRenderer.new()
 	add_child(world)
 	world.setup(biome, Game.current_run.tier)
+	ambient_motes = AmbientMotesScript.new()
+	ambient_motes.z_index = 2
+	add_child(ambient_motes)
+	ambient_motes.setup(biome.accent, Game.current_run.biome)
 	player = PlayerScript.new()
 	player.z_index = 8
 	add_child(player)
@@ -80,7 +97,7 @@ func _build_scene() -> void:
 	player.attack_fired.connect(_on_player_attack)
 	player.ability_requested.connect(_on_player_ability)
 	player.died.connect(_on_player_died)
-	player.dash_started.connect(func(): _burst(player.global_position, Color("#a66cff"), 1.2, "hit"))
+	player.dash_started.connect(_on_player_dash)
 	camera = Camera2D.new()
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 8.0
@@ -92,6 +109,10 @@ func _build_scene() -> void:
 	camera.make_current()
 	hud = HUDScript.new()
 	add_child(hud)
+	if OS.is_debug_build():
+		debug_menu = DebugMenuScript.new()
+		add_child(debug_menu)
+		debug_menu.command_requested.connect(_debug_command)
 	flash_rect = ColorRect.new()
 	flash_rect.color = Color(1, 1, 1, 0)
 	flash_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -110,6 +131,9 @@ func _build_pools() -> void:
 func _connect_ui() -> void:
 	hud.upgrade_selected.connect(_on_upgrade_selected)
 	hud.reroll_requested.connect(_on_reroll)
+	hud.banish_requested.connect(_on_banish_upgrade)
+	hud.lock_requested.connect(_on_lock_upgrade)
+	hud.favor_requested.connect(_on_favor_upgrade)
 	hud.interface_closed.connect(_resume_game)
 	hud.return_to_menu.connect(_abandon_run)
 
@@ -121,7 +145,10 @@ func _process(delta: float) -> void:
 	frame_index += 1
 	damage_numbers_this_frame = 0
 	Game.current_run.elapsed += delta
+	ambient_motes.global_position = player.global_position
 	_tick_buffs(delta)
+	_simulate_summons(delta)
+	_tick_passive_effects(delta)
 	_spawn_director(delta)
 	_rebuild_spatial_hash()
 	_simulate_enemies(delta)
@@ -131,13 +158,16 @@ func _process(delta: float) -> void:
 	_simulate_shrines(delta)
 	_contact_damage()
 	_event_director()
-	hud.update_hud(player, rift_progress, rift_goal, current_boss)
+	hud.update_hud(player, rift_progress, rift_goal, current_boss, _danger_indicator(), temporary_buffs)
 	if rift_progress >= rift_goal and not boss_started:
 		_start_boss()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if ending: return
-	if event.is_action_pressed("pause"):
+	if OS.is_debug_build() and event is InputEventKey and event.pressed and event.keycode == KEY_F10:
+		debug_menu.toggle()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("pause"):
 		if hud.has_overlay(): hud.close_interface()
 		else:
 			get_tree().paused = true
@@ -234,6 +264,13 @@ func _simulate_projectiles(delta: float) -> void:
 				if enemy.global_position.distance_to(projectile.global_position) > enemy.radius + projectile.radius: continue
 				if not projectile.register_hit(enemy.get_instance_id()): continue
 				_hit_enemy(enemy, projectile.damage, projectile.context)
+				if int(projectile.context.get("chain", 0)) > 0:
+					_chain_lightning(enemy, projectile.context, int(projectile.context.chain))
+					projectile.context.chain = 0
+				if randf() < float(projectile.context.get("lucky_hit", 0.0)):
+					_trigger_lucky_hit(enemy, projectile.context)
+				if not projectile.active and int(projectile.context.get("ricochet", 0)) > 0:
+					_ricochet_from(enemy, projectile.context)
 				if not projectile.active: break
 
 func _simulate_pickups(delta: float) -> void:
@@ -243,6 +280,40 @@ func _simulate_pickups(delta: float) -> void:
 			pickups.erase(pickup)
 			continue
 		pickup.simulate(delta, player.global_position, radius)
+
+func _simulate_summons(delta: float) -> void:
+	summon_refresh_timer -= delta
+	if summon_refresh_timer <= 0.0:
+		summon_refresh_timer = 0.6
+		_refresh_summons()
+	for companion in summons: companion.simulate(delta)
+
+func _refresh_summons() -> void:
+	var effects := Game.legendary_effects()
+	var desired := clampi(Game.build_tags().get("summon", 0) + int(effects.get("summon", 0)) + int(Game.current_run.get("bonus_summons", 0)), 0, 8)
+	while summons.size() < desired:
+		var companion: Node2D = SummonScript.new()
+		add_child(companion)
+		summons.append(companion)
+		companion.setup(self, player, summons.size() - 1, desired)
+	while summons.size() > desired:
+		var companion: Node2D = summons.pop_back()
+		companion.queue_free()
+	for index in summons.size():
+		summons[index].summon_index = index
+		summons[index].summon_count = summons.size()
+
+func _tick_passive_effects(delta: float) -> void:
+	passive_effect_timer -= delta
+	if passive_effect_timer > 0.0: return
+	passive_effect_timer = 0.75
+	var effects := Game.legendary_effects()
+	var damage: float = player.get_attack_spec().damage
+	if effects.has("orbit_power"):
+		var blade_origin := player.global_position + Vector2.from_angle(Game.current_run.elapsed * 2.0) * 125.0
+		_blast_area(blade_origin, 62.0, damage * effects.orbit_power / 200.0, "physical", false)
+	if effects.has("barrier_burn") and player.barrier > 0.0:
+		_blast_area(player.global_position, 145.0, damage * effects.barrier_burn / 100.0, "fire", false)
 
 func _simulate_effects(delta: float) -> void:
 	for burst in bursts.duplicate():
@@ -254,7 +325,7 @@ func _simulate_effects(delta: float) -> void:
 			number.deactivate()
 			numbers.erase(number)
 	for zone in zones.duplicate():
-		var was_triggered := zone.triggered
+		var was_triggered: bool = zone.triggered
 		if not zone.simulate(delta, player):
 			zone.deactivate()
 			zones.erase(zone)
@@ -276,11 +347,14 @@ func _simulate_shrines(delta: float) -> void:
 			for index in 5: _drop_item(cursed_origin + Vector2.from_angle(TAU * index / 5.0) * 55.0, true)
 
 func _contact_damage() -> void:
+	if god_mode: return
 	for enemy in enemies:
 		if not enemy.active: continue
 		if enemy.global_position.distance_to(player.global_position) <= enemy.radius + 23.0 and enemy.can_contact():
 			enemy.mark_contact()
 			player.take_damage(enemy.contact_damage)
+			if enemy.elite and "Vampiric" in enemy.elite_affixes:
+				enemy.health = minf(enemy.max_health, enemy.health + enemy.contact_damage * 4.0)
 			if enemy.data.get("role", "") == "exploder":
 				_spawn_zone(enemy.global_position, 105.0, enemy.contact_damage * 1.4, 0.16, "poison")
 				enemy.take_damage(enemy.health + 1.0, {"element": "poison", "critical": false})
@@ -300,14 +374,21 @@ func _event_director() -> void:
 
 func _on_player_attack(origin: Vector2, direction: Vector2, spec: Dictionary) -> void:
 	var count: int = spec.projectiles
+	var effects: Dictionary = spec.effects
+	if effects.has("split_third") and int(spec.attack_index) % maxi(1, int(effects.split_third)) == 0: count += 2
+	if spec.style == "melee":
+		_melee_arc(origin, direction, spec)
+		return
 	var spread := minf(0.55, 0.09 * (count - 1))
 	for index in count:
 		var offset := 0.0 if count == 1 else lerpf(-spread, spread, float(index) / (count - 1))
 		var shot := spec.duplicate(true)
 		shot.critical = randf() < float(spec.crit_chance)
+		if shot.critical and effects.has("blood_crit"):
+			player.health = maxf(1.0, player.health - player.max_health * 0.025)
+			shot.damage *= effects.blood_crit / 100.0
 		if shot.critical: shot.damage *= float(spec.crit_mult)
 		_spawn_projectile(origin, direction.rotated(offset), shot, false)
-	var effects: Dictionary = spec.effects
 	if effects.has("fifth_lightning") and int(spec.attack_index) % int(effects.fifth_lightning) == 0:
 		var target := get_nearest_enemy(origin)
 		if is_instance_valid(target):
@@ -316,8 +397,23 @@ func _on_player_attack(origin: Vector2, direction: Vector2, spec: Dictionary) ->
 		var target := get_nearest_enemy(origin)
 		if is_instance_valid(target): _blast_area(target.global_position, 90.0, spec.damage, "lightning", false)
 
+func _melee_arc(origin: Vector2, direction: Vector2, spec: Dictionary) -> void:
+	var reach: float = 118.0 * float(spec.area)
+	var hit_count := 0
+	for enemy in _nearby_enemies(origin, reach + 100.0):
+		var offset := enemy.global_position - origin
+		if offset.length() <= reach + enemy.radius and direction.dot(offset.normalized()) > -0.05:
+			var context := spec.duplicate(true)
+			context.critical = randf() < float(spec.crit_chance)
+			context.direction = direction
+			var hit_damage: float = spec.damage * (spec.crit_mult if context.critical else 1.0)
+			_hit_enemy(enemy, hit_damage, context)
+			hit_count += 1
+	_burst(origin + direction * 64.0, Color("#f5d3cc"), 1.8 + hit_count * 0.06, "hit")
+	_shake(3.0 + hit_count * 0.15)
+
 func _on_player_ability(kind: String, origin: Vector2, direction: Vector2) -> void:
-	var damage := player.get_attack_spec().damage
+	var damage: float = float(player.get_attack_spec().damage)
 	match kind:
 		"nova":
 			for index in 18:
@@ -346,6 +442,28 @@ func _on_player_ability(kind: String, origin: Vector2, direction: Vector2) -> vo
 			_flash(Color("#ff8a42"), 0.7)
 			for enemy in enemies.duplicate():
 				if enemy.active: _hit_enemy(enemy, damage * 18.0, {"element": "fire", "critical": true, "effects": {}})
+		"potion":
+			_burst(player.global_position, Color("#5ee39a"), 1.8, "level")
+			AudioManager.play_sfx("level", 1.25, -7.0)
+		"barrier_spears":
+			var effects := Game.legendary_effects()
+			var count := int(effects.get("barrier_spears", 4))
+			for index in count:
+				var spec := player.get_attack_spec()
+				spec.damage = damage * 0.8
+				spec.element = "ice"
+				_spawn_projectile(player.global_position, Vector2.from_angle(TAU * index / count), spec, false)
+
+func _on_player_dash() -> void:
+	_burst(player.global_position, Color("#a66cff"), 1.2, "hit")
+	var effects := Game.legendary_effects()
+	var damage: float = player.get_attack_spec().damage
+	if effects.has("dash_nova"): _blast_area(player.global_position, 145.0, damage * 1.3, "ice", false)
+	if effects.has("dash_fire"):
+		var zone := _spawn_zone(player.global_position, 85.0, 0.0, 0.08, "fire")
+		zone.set_meta("friendly", true)
+		zone.set_meta("friendly_damage", damage * 1.1)
+	if effects.has("dash_strike"): _melee_arc(player.global_position, player.facing, player.get_attack_spec())
 
 func _hit_enemy(enemy: RiftEnemy, amount: float, context: Dictionary) -> void:
 	if not enemy.active: return
@@ -354,16 +472,88 @@ func _hit_enemy(enemy: RiftEnemy, amount: float, context: Dictionary) -> void:
 	if enemy.boss: final_amount *= 1.0 + Game.stat_total("boss_damage") / 100.0
 	if temporary_buffs.has("frenzy"): final_amount *= 1.45
 	if temporary_buffs.has("blood"): final_amount *= 2.0
+	var effects: Dictionary = context.get("effects", {})
+	if effects.has("bleed_execute") and enemy.statuses.has("bleed") and enemy.health / maxf(enemy.max_health, 1.0) * 100.0 <= effects.bleed_execute:
+		final_amount = enemy.health + 1.0
+	if float(context.get("execute", 0.0)) > 0.0 and enemy.health / maxf(enemy.max_health, 1.0) * 100.0 <= float(context.execute):
+		final_amount = enemy.health + 1.0
+	if context.get("critical", false) and effects.has("crit_freeze"): context.force_freeze = true
 	Game.current_run.damage += final_amount
 	Game.current_run.highest_crit = maxf(Game.current_run.highest_crit, final_amount)
-	var color := RiftEnemy.ELEMENT_COLORS.get(context.get("element", "physical"), Color.WHITE)
+	var color: Color = RiftEnemy.ELEMENT_COLORS.get(context.get("element", "physical"), Color.WHITE)
 	_burst(enemy.global_position, color, 1.3 if context.get("critical", false) else 0.75)
 	_damage_number(enemy.global_position, final_amount, context.get("element", "physical"), context.get("critical", false))
 	if context.get("critical", false):
 		AudioManager.play_sfx("critical", randf_range(0.9, 1.1), -5.0)
 		_shake(4.0)
 	else: AudioManager.play_sfx("hit", randf_range(0.9, 1.12), -13.0)
-	enemy.take_damage(final_amount, context)
+	var knockback := 8.0 + Game.stat_total("knockback") * 0.45
+	enemy.global_position += Vector2(context.get("direction", Vector2.ZERO)) * knockback * (0.18 if enemy.boss else 1.0)
+	recent_hits.push_back(final_amount)
+	if recent_hits.size() > 20: recent_hits.pop_front()
+	if effects.has("hit_echo") and recent_hits.size() >= int(effects.hit_echo):
+		var echoed := 0.0
+		for hit in recent_hits: echoed += hit
+		recent_hits.clear()
+		final_amount += echoed * 0.55
+	var overkill := maxf(0.0, final_amount - enemy.health)
+	var killed := enemy.take_damage(final_amount, context)
+	if killed and overkill > 0.0 and effects.has("overkill_wave"):
+		var wave_context := context.duplicate(true)
+		wave_context.effects = effects.duplicate()
+		wave_context.effects.erase("overkill_wave")
+		_burst(enemy.global_position, Color("#f2c66d"), 2.0, "explode")
+		for nearby in _nearby_enemies(enemy.global_position, 105.0):
+			if nearby.active: _hit_enemy(nearby, overkill * effects.overkill_wave / 100.0, wave_context)
+	if context.get("critical", false): _hit_stop(0.018)
+
+func _chain_lightning(source: RiftEnemy, context: Dictionary, remaining: int) -> void:
+	var current := source
+	var excluded := {source.get_instance_id(): true}
+	for jump in mini(remaining, 12):
+		var next: RiftEnemy
+		var best := 290.0 * 290.0
+		for enemy in _nearby_enemies(current.global_position, 300.0):
+			if not enemy.active or excluded.has(enemy.get_instance_id()): continue
+			var distance := current.global_position.distance_squared_to(enemy.global_position)
+			if distance < best:
+				best = distance
+				next = enemy
+		if not is_instance_valid(next): break
+		excluded[next.get_instance_id()] = true
+		_burst(next.global_position, Color("#ffe66d"), 0.75)
+		var chained := context.duplicate(true)
+		chained.chain = 0
+		chained.element = "lightning"
+		_hit_enemy(next, float(context.get("damage", player.get_attack_spec().damage)) * pow(0.82, jump + 1), chained)
+		current = next
+	if context.get("effects", {}).has("chain_nova"):
+		_blast_area(current.global_position, 92.0, float(context.get("damage", 30.0)) * context.effects.chain_nova / 100.0, "lightning", false)
+
+func _ricochet_from(source: RiftEnemy, context: Dictionary) -> void:
+	var target: RiftEnemy
+	for candidate in _nearby_enemies(source.global_position, 420.0):
+		if candidate.active and candidate != source:
+			target = candidate
+			break
+	if not is_instance_valid(target): return
+	var spec := context.duplicate(true)
+	spec.ricochet = int(spec.get("ricochet", 0)) - 1
+	spec.penetration = 1
+	_spawn_projectile(source.global_position, source.global_position.direction_to(target.global_position), spec, false)
+
+func _trigger_lucky_hit(source: RiftEnemy, context: Dictionary) -> void:
+	var effects: Dictionary = context.get("effects", {})
+	if effects.has("lucky_fork"):
+		for index in int(effects.lucky_fork):
+			var spec := context.duplicate(true)
+			spec.damage = float(context.get("damage", 25.0)) * 0.55
+			spec.penetration = 1
+			_spawn_projectile(source.global_position, Vector2.from_angle(randf() * TAU), spec, false)
+	if effects.has("void_well"):
+		var zone := _spawn_zone(source.global_position, 105.0, 0.0, 0.42, "void")
+		zone.set_meta("friendly", true)
+		zone.set_meta("friendly_damage", float(context.get("damage", 25.0)) * effects.void_well / 10.0)
 
 func _on_enemy_attack(enemy: RiftEnemy, kind: String, payload: Dictionary) -> void:
 	if not enemy.active: return
@@ -379,7 +569,14 @@ func _on_enemy_attack(enemy: RiftEnemy, kind: String, payload: Dictionary) -> vo
 		"mortar": _spawn_zone(payload.target, 105.0, payload.damage, 0.9, "fire")
 		"arcane":
 			for index in payload.count:
-				_spawn_projectile(enemy.global_position, Vector2.from_angle(TAU * index / payload.count), {"damage": payload.damage, "speed": 310.0, "radius": 11.0, "life": 3.0, "penetration": 1, "element": "void"}, true)
+				_spawn_projectile(enemy.global_position, Vector2.from_angle(TAU * index / payload.count), {"damage": payload.damage, "speed": 310.0, "radius": 11.0, "life": 3.0, "penetration": 1, "element": payload.get("element", "void")}, true)
+		"affix_zone": _spawn_zone(payload.target, payload.radius, payload.damage, 0.75, payload.element)
+		"waller":
+			var across := enemy.global_position.direction_to(payload.target).rotated(PI * 0.5)
+			for index in range(-2, 3): _spawn_zone(payload.target + across * index * 70.0, 42.0, payload.damage, 0.65, "physical")
+		"status_tick":
+			if payload.element == "bleed" and payload.effects.has("bleed_cdr"):
+				player.reduce_cooldowns(float(payload.effects.bleed_cdr) * 0.035)
 		"phase":
 			hud.announce("PHASE %d  •  THE RIFT DEEPENS" % payload.phase, biome.accent, 0.8)
 			_flash(biome.accent, 0.22)
@@ -414,12 +611,14 @@ func _on_enemy_killed(enemy: RiftEnemy, context: Dictionary) -> void:
 	var origin := enemy.global_position
 	var was_boss := enemy.boss
 	var was_elite := enemy.elite
+	var death_affixes := enemy.elite_affixes.duplicate()
 	if was_boss:
 		Game.current_run.boss_kills += 1
 		Game.statistics.boss_kills += 0 # merged on run completion
 		_burst(origin, biome.accent, 7.0, "boss")
 		_flash(Color.WHITE, 0.8)
 		_shake(30.0)
+		_hit_stop(0.16)
 		AudioManager.play_sfx("boss", 0.6, 2.0)
 		for index in 12: _drop_item(origin + Vector2.from_angle(TAU * index / 12.0) * randf_range(60.0, 180.0), index < 5)
 		for index in 18: _spawn_gold(origin + Vector2.from_angle(randf() * TAU) * randf_range(30.0, 180.0), 8 + Game.current_run.tier)
@@ -432,6 +631,10 @@ func _on_enemy_killed(enemy: RiftEnemy, context: Dictionary) -> void:
 		Game.meta.pity += 2
 		AudioManager.play_sfx("explode", 0.72, -2.0)
 		_burst(origin, Color("#ffc857"), 3.0, "elite")
+		_hit_stop(0.055)
+		var elite_effects := Game.legendary_effects()
+		if elite_effects.has("elite_summon"):
+			Game.current_run.bonus_summons = mini(8, int(Game.current_run.get("bonus_summons", 0)) + int(elite_effects.elite_summon))
 		for index in 3 + int(randf() < 0.45): _drop_item(origin + Vector2.from_angle(randf() * TAU) * randf_range(24.0, 80.0), index == 0)
 		for index in 6: _spawn_gold(origin, 3 + Game.current_run.tier)
 	else:
@@ -441,10 +644,11 @@ func _on_enemy_killed(enemy: RiftEnemy, context: Dictionary) -> void:
 	if Game.current_run.kills % 3 == 0:
 		_spawn_xp(origin, kill_xp_bank)
 		kill_xp_bank = 0.0
-	var loot_chance := 0.012 + Game.current_run.tier * 0.0012
+	var loot_chance: float = 0.012 + Game.current_run.tier * 0.0012
 	if temporary_buffs.has("greed"): loot_chance *= 3.0
 	if randf() < loot_chance: _drop_item(origin, false)
 	if randf() < 0.05: _spawn_gold(origin, 1 + Game.current_run.tier * 0.25)
+	if "Explosive" in death_affixes: _spawn_zone(origin, 125.0, enemy.contact_damage * 1.8, 0.45, "fire")
 	_apply_death_synergies(origin, context, enemy)
 
 func _apply_death_synergies(origin: Vector2, context: Dictionary, dead_enemy: RiftEnemy) -> void:
@@ -456,6 +660,20 @@ func _apply_death_synergies(origin: Vector2, context: Dictionary, dead_enemy: Ri
 	if dead_enemy.statuses.has("ice") and effects.has("frost_shatter"):
 		for index in int(effects.frost_shatter):
 			_spawn_projectile(origin, Vector2.from_angle(TAU * index / effects.frost_shatter), {"damage": player.get_attack_spec().damage * 0.6, "speed": 720.0, "radius": 6.0, "life": 0.8, "penetration": 2, "element": "ice", "critical": false, "effects": effects}, false)
+	if dead_enemy.statuses.has("poison") and effects.has("poison_spread"):
+		var spread_count := 0
+		for target in _nearby_enemies(origin, 230.0):
+			if target.active:
+				target.take_damage(0.1, {"element": "poison", "critical": false, "effects": effects, "damage": player.get_attack_spec().damage * 0.2})
+				spread_count += 1
+				if spread_count >= int(effects.poison_spread): break
+	if effects.has("kill_split"):
+		for index in 3:
+			_spawn_projectile(origin, Vector2.from_angle(TAU * index / 3.0 + randf()), {"damage": player.get_attack_spec().damage * 0.45, "speed": 690.0, "radius": 6.0, "life": 0.7, "penetration": 1, "element": context.get("element", "physical"), "critical": false, "effects": effects}, false)
+	if context.get("summon", false) and effects.has("summon_reform"):
+		_blast_area(origin, 95.0, player.get_attack_spec().damage * effects.summon_reform / 100.0, "void", false)
+	if dead_enemy.statuses.has("bleed") and effects.has("bleed_cdr"):
+		player.reduce_cooldowns(float(effects.bleed_cdr) * 0.08)
 
 func _blast_area(origin: Vector2, radius: float, damage: float, element: String, critical: bool) -> void:
 	_burst(origin, RiftEnemy.ELEMENT_COLORS.get(element, Color.WHITE), radius / 65.0, "explode")
@@ -471,12 +689,17 @@ func _on_pickup_collected(pickup: RiftPickup) -> void:
 		"item":
 			var item := pickup.item.duplicate(true)
 			var equipped := _equipped_for_item(item)
-			Game.register_item(item)
-			latest_item = item
-			hud.show_loot(item, equipped)
-			AudioManager.play_sfx("legendary" if item.rarity_index >= 4 else "loot", 1.0, -2.0 if item.rarity_index >= 4 else -7.0)
+			var kept := Game.register_item(item)
+			if kept:
+				latest_item = item
+				hud.show_loot(item, equipped)
+			else:
+				latest_item = {}
+				hud.announce("AUTO-SALVAGED  •  %s" % item.rarity.to_upper(), item.color, 0.55)
+			AudioManager.play_sfx("legendary" if item.rarity_index >= 4 else "loot", 1.35 if item.rarity_index == 5 else 1.0, 1.0 if item.rarity_index == 5 else (-2.0 if item.rarity_index >= 4 else -7.0))
 			if item.rarity_index >= 4:
-				_flash(item.color, 0.26)
+				_flash(item.color, 0.48 if item.rarity_index == 5 else 0.26)
+				if item.rarity_index == 5: _shake(10.0)
 				hud.announce("%s DROP  •  %s" % [item.rarity.to_upper(), item.name.to_upper()], item.color, 1.1)
 	pickup.deactivate()
 	pickups.erase(pickup)
@@ -498,16 +721,23 @@ func _open_level_up() -> void:
 	var tags := Game.build_tags()
 	# Smart choices gently favor established build tags while preserving variance.
 	for upgrade in DataRegistry.upgrades:
+		if upgrade.id in banished_upgrade_ids: continue
 		for index in int(tags.get(upgrade.tag, 0)): candidates.append(upgrade)
+		if upgrade.tag == favored_upgrade_tag:
+			for index in 5: candidates.append(upgrade)
 	candidates.shuffle()
+	for locked_id in locked_upgrade_ids:
+		for upgrade in DataRegistry.upgrades:
+			if upgrade.id == locked_id and upgrade not in current_upgrade_options: current_upgrade_options.append(upgrade)
 	for upgrade in candidates:
 		if current_upgrade_options.size() >= 3: break
-		if upgrade not in current_upgrade_options: current_upgrade_options.append(upgrade)
+		if upgrade.id not in banished_upgrade_ids and upgrade not in current_upgrade_options: current_upgrade_options.append(upgrade)
 	AudioManager.play_sfx("level", 1.0, -2.0)
 	hud.show_level_up(current_upgrade_options, Game.current_run.rerolls)
 
 func _on_upgrade_selected(upgrade: Dictionary) -> void:
 	Game.current_run.upgrades.append(upgrade)
+	locked_upgrade_ids.clear()
 	pending_level_ups -= 1
 	_burst(player.global_position, RiftEnemy.ELEMENT_COLORS.get(_tag_element(upgrade.tag), UIFactory.CYAN), 2.7, "level")
 	if upgrade.stat == "barrier":
@@ -520,9 +750,26 @@ func _on_upgrade_selected(upgrade: Dictionary) -> void:
 		_resume_game()
 
 func _on_reroll() -> void:
-	if Game.current_run.rerolls <= 0: return
-	Game.current_run.rerolls -= 1
+	if Game.current_run.rerolls > 0: Game.current_run.rerolls -= 1
+	elif Game.current_run.gold >= 100: Game.current_run.gold -= 100
+	else: return
 	_open_level_up()
+
+func _on_banish_upgrade(upgrade: Dictionary) -> void:
+	if upgrade.id not in banished_upgrade_ids: banished_upgrade_ids.append(upgrade.id)
+	locked_upgrade_ids.erase(upgrade.id)
+	hud.announce("BANISHED  •  %s" % upgrade.name.to_upper(), UIFactory.CRIMSON, 0.45)
+	_open_level_up()
+
+func _on_lock_upgrade(upgrade: Dictionary) -> void:
+	if upgrade.id in locked_upgrade_ids: locked_upgrade_ids.erase(upgrade.id)
+	else: locked_upgrade_ids.append(upgrade.id)
+	hud.announce(("LOCKED  •  " if upgrade.id in locked_upgrade_ids else "UNLOCKED  •  ") + upgrade.name.to_upper(), UIFactory.CYAN, 0.45)
+	hud.show_level_up(current_upgrade_options, Game.current_run.rerolls)
+
+func _on_favor_upgrade(tag: String) -> void:
+	favored_upgrade_tag = tag
+	hud.announce("FATE FAVORS  •  %s" % tag.to_upper(), UIFactory.GOLD, 0.55)
 
 func _check_evolutions() -> void:
 	var evolved: Array = Game.current_run.get("evolutions", [])
@@ -615,6 +862,21 @@ func get_nearest_enemy(origin: Vector2) -> RiftEnemy:
 			nearest = enemy
 	return nearest
 
+func _danger_indicator() -> String:
+	var target: RiftEnemy = current_boss if is_instance_valid(current_boss) and current_boss.active else null
+	var best := INF
+	if not is_instance_valid(target):
+		for enemy in enemies:
+			if not enemy.active or not enemy.elite: continue
+			var distance := player.global_position.distance_squared_to(enemy.global_position)
+			if distance < best:
+				best = distance
+				target = enemy
+	if not is_instance_valid(target): return ""
+	var offset := target.global_position - player.global_position
+	var cardinal := "E" if absf(offset.x) > absf(offset.y) and offset.x > 0 else ("W" if absf(offset.x) > absf(offset.y) else ("S" if offset.y > 0 else "N"))
+	return "%s  •  %s  •  %dm" % ["BOSS" if target.boss else "ELITE", cardinal, int(offset.length() / 10.0)]
+
 func _rebuild_spatial_hash() -> void:
 	spatial_hash.clear()
 	for enemy in enemies:
@@ -692,6 +954,14 @@ func _flash(color: Color, alpha: float) -> void:
 
 func _shake(amount: float) -> void:
 	camera_shake = maxf(camera_shake, amount * Game.settings.screen_shake)
+	camera_zoom_pulse = maxf(camera_zoom_pulse, amount * 0.004)
+
+func _hit_stop(seconds: float) -> void:
+	if ending or get_tree().paused or Engine.time_scale < 0.9: return
+	Engine.time_scale = 0.16
+	get_tree().create_timer(seconds, true, false, true).timeout.connect(func():
+		if not ending and not get_tree().paused: Engine.time_scale = 1.0
+	)
 
 func _update_camera(delta: float) -> void:
 	if not is_instance_valid(camera): return
@@ -701,6 +971,10 @@ func _update_camera(delta: float) -> void:
 	else: camera.offset = camera.offset.lerp(Vector2.ZERO, minf(1.0, delta * 10.0))
 	var look := player.facing * 70.0
 	camera.position = camera.position.lerp(look, minf(1.0, delta * 3.0))
+	if camera_zoom_pulse > 0.001:
+		camera.zoom = Vector2.ONE * (1.0 - camera_zoom_pulse)
+		camera_zoom_pulse = lerpf(camera_zoom_pulse, 0.0, minf(1.0, delta * 10.0))
+	else: camera.zoom = camera.zoom.lerp(Vector2.ONE, minf(1.0, delta * 8.0))
 
 func _equipped_for_item(item: Dictionary) -> Dictionary:
 	var slot: String = item.slot
@@ -712,6 +986,25 @@ func _equipped_for_item(item: Dictionary) -> Dictionary:
 
 func _tag_element(tag: String) -> String:
 	return tag if tag in RiftEnemy.ELEMENT_COLORS else "void"
+
+func _debug_command(command: String) -> void:
+	match command:
+		"god":
+			god_mode = not god_mode
+			hud.announce("GOD MODE " + ("ON" if god_mode else "OFF"), UIFactory.GOLD, 0.6)
+		"enemy": _spawn_enemy(false, player.global_position + Vector2(280, 0))
+		"elite": _spawn_enemy(true, player.global_position + Vector2(300, 0))
+		"boss":
+			if not boss_started: _start_boss()
+		"item": _drop_item(player.global_position + Vector2(80, 0), true)
+		"xp": _add_xp(hud.xp_needed(Game.current_run.level) + 1.0)
+		"gold": Game.current_run.gold += 1000
+		"tier": Game.current_run.tier += 1
+		"kill_all":
+			for enemy in enemies.duplicate():
+				if enemy.active and not enemy.boss: enemy.take_damage(enemy.max_health * 20.0, {"element": "void", "critical": true, "effects": {}})
+		"stress":
+			for index in 250: _spawn_enemy(index % 40 == 0)
 
 func _take_enemy() -> RiftEnemy:
 	for enemy in enemy_pool:
@@ -781,8 +1074,8 @@ func _create_number() -> DamageNumber:
 func _take_zone() -> DangerZone:
 	for zone in zone_pool:
 		if not zone.active:
-			zone.remove_meta("friendly") if zone.has_meta("friendly") else null
-			zone.remove_meta("friendly_damage") if zone.has_meta("friendly_damage") else null
+			if zone.has_meta("friendly"): zone.remove_meta("friendly")
+			if zone.has_meta("friendly_damage"): zone.remove_meta("friendly_damage")
 			return zone
 	return _create_zone()
 

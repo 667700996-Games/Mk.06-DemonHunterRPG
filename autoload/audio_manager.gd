@@ -8,8 +8,12 @@ var pool_cursor := 0
 var music_player: AudioStreamPlayer
 var cached_sfx: Dictionary = {}
 var music_mood := ""
+var disabled := false
 
 func _ready() -> void:
+	if "--stress-test" in OS.get_cmdline_user_args():
+		disabled = true
+		return
 	for index in POOL_SIZE:
 		var player := AudioStreamPlayer.new()
 		player.bus = &"SFX"
@@ -22,7 +26,21 @@ func _ready() -> void:
 	Game.settings_changed.connect(apply_volumes)
 	apply_volumes()
 
+func _exit_tree() -> void:
+	shutdown()
+
+func shutdown() -> void:
+	if disabled: return
+	if is_instance_valid(music_player):
+		music_player.stop()
+		music_player.stream = null
+	for player in sfx_players:
+		player.stop()
+		player.stream = null
+	cached_sfx.clear()
+
 func apply_volumes() -> void:
+	if disabled: return
 	_set_bus("Master", Game.settings.master_volume)
 	_set_bus("Music", Game.settings.music_volume)
 	_set_bus("SFX", Game.settings.sfx_volume)
@@ -33,20 +51,24 @@ func _set_bus(bus_name: String, linear: float) -> void:
 	if index >= 0: AudioServer.set_bus_volume_db(index, linear_to_db(maxf(linear, 0.001)))
 
 func play_sfx(name: String, pitch := 1.0, volume_db := 0.0) -> void:
+	if disabled: return
 	var stream: AudioStreamWAV = cached_sfx.get(name, cached_sfx.get("hit"))
 	if stream == null: return
 	var player := sfx_players[pool_cursor]
 	pool_cursor = (pool_cursor + 1) % sfx_players.size()
 	player.stop()
 	player.stream = stream
+	player.bus = &"UI" if name == "ui" else &"SFX"
 	player.pitch_scale = pitch * randf_range(0.96, 1.04)
 	player.volume_db = volume_db
 	player.play()
 
 func play_music(mood: String) -> void:
+	if disabled: return
 	if music_mood == mood and music_player.playing: return
 	music_mood = mood
-	var roots := {"menu": 42, "combat": 38, "intense": 34, "boss": 30, "victory": 50}
+	var roots := {"menu": 42, "combat": 38, "combat_graveyard": 38, "combat_ruins": 34,
+		"combat_abyss": 43, "intense": 34, "boss": 30, "victory": 50}
 	music_player.stream = _make_music(int(roots.get(mood, 38)), mood)
 	music_player.volume_db = -8.0
 	music_player.play()

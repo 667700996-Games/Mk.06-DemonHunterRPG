@@ -30,6 +30,9 @@ var velocity := Vector2.ZERO
 var walk_phase := 0.0
 var flash := 0.0
 var dead := false
+var potion_charges := 3
+var potion_timer := 0.0
+var manual_attack_toggled := false
 
 func setup(owner_arena: Node) -> void:
 	arena = owner_arena
@@ -48,6 +51,7 @@ func _process(delta: float) -> void:
 	secondary_timer -= delta
 	q_timer -= delta
 	e_timer -= delta
+	potion_timer -= delta
 	dash_ready -= delta
 	flash = maxf(0.0, flash - delta * 7.0)
 	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -61,6 +65,7 @@ func _process(delta: float) -> void:
 		velocity = (move_input.normalized() if move_input.length() > 0.1 else facing) * dash_speed
 		dash_started.emit()
 		AudioManager.play_sfx("dash")
+		if Game.settings.gamepad_vibration: Input.start_joy_vibration(0, 0.15, 0.45, 0.12)
 	if dash_timer > 0.0:
 		dash_timer -= delta
 		global_position += velocity * delta
@@ -71,7 +76,9 @@ func _process(delta: float) -> void:
 	walk_phase += delta * (4.0 + velocity.length() * 0.028)
 	var auto_target: Node2D = arena.get_nearest_enemy(global_position) if is_instance_valid(arena) else null
 	if Game.settings.auto_attack and is_instance_valid(auto_target): facing = global_position.direction_to(auto_target.global_position)
-	var wants_attack := Input.is_action_pressed("attack") or (Game.settings.auto_attack and is_instance_valid(auto_target))
+	if not Game.settings.hold_to_attack and Input.is_action_just_pressed("attack"): manual_attack_toggled = not manual_attack_toggled
+	var manual_attack := Input.is_action_pressed("attack") if Game.settings.hold_to_attack else manual_attack_toggled
+	var wants_attack: bool = manual_attack or (Game.settings.auto_attack and is_instance_valid(auto_target))
 	if wants_attack and attack_timer <= 0.0:
 		fire_attack()
 	if Input.is_action_just_pressed("secondary") and secondary_timer <= 0.0:
@@ -86,11 +93,20 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("ultimate") and ultimate_charge >= 1.0:
 		ultimate_charge = 0.0
 		ability_requested.emit("ultimate", global_position, facing)
+	if Input.is_action_just_pressed("potion") and potion_charges > 0 and potion_timer <= 0.0 and health < max_health:
+		potion_charges -= 1
+		potion_timer = 18.0
+		heal(max_health * (0.35 + Game.stat_total("potion_power") / 100.0))
+		ability_requested.emit("potion", global_position, facing)
 	queue_redraw()
 
 func fire_attack() -> void:
 	attack_counter += 1
 	var speed_bonus := Game.stat_total("attack_speed")
+	var attack_effects := Game.legendary_effects()
+	if health / maxf(max_health, 1.0) < 0.4:
+		speed_bonus += float(attack_effects.get("lowhealth_speed", 0.0))
+		if attack_effects.has("last_stand"): speed_bonus += 100.0
 	attack_timer = 0.24 / (1.0 + speed_bonus / 100.0)
 	var spec := get_attack_spec()
 	spec.attack_index = attack_counter
@@ -99,26 +115,37 @@ func fire_attack() -> void:
 
 func get_attack_spec() -> Dictionary:
 	var weapon: Dictionary = Game.equipment.get("weapon", {})
+	var weapon_tags: Array = weapon.get("tags", [])
 	var base_damage := 24.0 + float(weapon.get("base_power", 0.0))
 	base_damage *= 1.0 + (Game.stat_total("damage") + Game.stat_total("all_damage") + Game.meta.passive_power) / 100.0
+	base_damage *= pow(1.085, maxf(0.0, Game.current_run.get("level", 1) - 1.0))
 	var tags := Game.build_tags()
 	var element := "physical"
 	for candidate in ["lightning", "fire", "ice", "poison", "bleed", "void"]:
 		if tags.get(candidate, 0) > tags.get(element, 0): element = candidate
 	var projectiles := 1 + int(Game.stat_total("projectiles"))
 	var crit_chance := 0.08 + Game.stat_total("crit_chance") / 100.0
+	var effects := Game.legendary_effects()
+	if effects.has("magnet_damage"): base_damage *= 1.0 + Game.stat_total("pickup_radius") / 100.0 * effects.magnet_damage / 100.0
+	if effects.has("speed_damage"): base_damage *= 1.0 + velocity.length() / maxf(move_speed, 1.0) * effects.speed_damage / 100.0
+	if effects.has("last_stand") and health / maxf(max_health, 1.0) < 0.35: base_damage *= effects.last_stand
 	return {
 		"damage": base_damage, "speed": 850.0 * (1.0 + Game.stat_total("projectile_speed") / 100.0),
 		"radius": 8.0 * (1.0 + Game.stat_total("projectile_size") / 100.0), "life": 1.25,
 		"penetration": 1 + int(Game.stat_total("penetration")), "projectiles": projectiles,
 		"crit_chance": crit_chance, "crit_mult": 1.75 + Game.stat_total("crit_damage") / 100.0,
-		"element": element, "chain": int(Game.stat_total("chain")), "effects": Game.legendary_effects()
+		"element": element, "chain": int(Game.stat_total("chain")) + int(effects.get("chain", 0)),
+		"ricochet": int(Game.stat_total("ricochet")), "lucky_hit": 0.08 + Game.stat_total("lucky_hit") / 100.0,
+		"execute": Game.stat_total("execute"), "area": 1.0 + Game.stat_total("area") / 100.0,
+		"style": "melee" if "melee" in weapon_tags else "projectile", "effects": effects
 	}
 
 func take_damage(amount: float) -> void:
 	if dead or invulnerable > 0.0: return
+	if is_instance_valid(arena) and arena.get("god_mode"): return
 	var reduction := clampf(Game.stat_total("damage_reduction") / 100.0, 0.0, 0.7)
 	var actual := amount * (1.0 - reduction)
+	var barrier_before := barrier
 	if barrier > 0.0:
 		var blocked := minf(barrier, actual)
 		barrier -= blocked
@@ -130,6 +157,9 @@ func take_damage(amount: float) -> void:
 	invulnerable = 0.22
 	health_changed.emit()
 	AudioManager.play_sfx("hurt")
+	if barrier < barrier_before and Game.legendary_effects().has("barrier_spears"):
+		ability_requested.emit("barrier_spears", global_position, facing)
+	if Game.settings.gamepad_vibration: Input.start_joy_vibration(0, 0.35, 0.2, 0.16)
 	if health <= 0.0:
 		var powers := Game.legendary_effects()
 		if powers.has("phoenix") and not Game.current_run.get("phoenix_used", false):
@@ -154,13 +184,24 @@ func register_kill() -> void:
 	ultimate_charge = minf(1.0, ultimate_charge + 0.012)
 	if Game.current_run.kills % 25 == 0 and Game.stat_total("kill_heal") > 0.0:
 		heal(max_health * Game.stat_total("kill_heal") / 100.0)
+	var effects := Game.legendary_effects()
+	if dash_timer > 0.0 and effects.has("dash_reset"):
+		secondary_timer = maxf(0.0, secondary_timer - effects.dash_reset / 100.0)
+		q_timer = maxf(0.0, q_timer - effects.dash_reset / 100.0)
+		e_timer = maxf(0.0, e_timer - effects.dash_reset / 100.0)
+
+func reduce_cooldowns(seconds: float) -> void:
+	secondary_timer = maxf(0.0, secondary_timer - seconds)
+	q_timer = maxf(0.0, q_timer - seconds)
+	e_timer = maxf(0.0, e_timer - seconds)
 
 func cooldown_ratios() -> Dictionary:
 	return {
 		"dash": clampf(1.0 - dash_ready / maxf(dash_cooldown, 0.01), 0.0, 1.0),
 		"secondary": clampf(1.0 - secondary_timer / 3.4, 0.0, 1.0),
 		"q": clampf(1.0 - q_timer / 5.5, 0.0, 1.0),
-		"e": clampf(1.0 - e_timer / 7.0, 0.0, 1.0), "r": ultimate_charge
+		"e": clampf(1.0 - e_timer / 7.0, 0.0, 1.0), "r": ultimate_charge,
+		"potion": clampf(1.0 - potion_timer / 18.0, 0.0, 1.0)
 	}
 
 func _draw() -> void:
@@ -187,4 +228,3 @@ func _draw() -> void:
 		draw_arc(Vector2.ZERO, 38.0, -2.6, 2.6, 18, Color(0.3, 0.85, 1.0, 0.55), 4.0)
 	if flash > 0.0:
 		draw_circle(Vector2(0, -6), 34.0, Color(1, 1, 1, flash * 0.5))
-

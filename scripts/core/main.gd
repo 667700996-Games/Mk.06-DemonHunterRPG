@@ -10,13 +10,40 @@ var title_time := 0.0
 var selected_tier := 1
 var selected_biome := "graveyard"
 var active_arena: Node
+var transition_rect: ColorRect
 
 func _ready() -> void:
 	randomize()
 	_configure_input()
 	SaveManager.load_game()
 	Game.apply_settings()
+	if "--smoke-test" in OS.get_cmdline_user_args():
+		var smoke_test: Node = load("res://tests/smoke_test.gd").new()
+		add_child(smoke_test)
+		return
+	if "--stress-test" in OS.get_cmdline_user_args():
+		var stress_test: Node = load("res://tests/performance_test.gd").new()
+		add_child(stress_test)
+		return
+	if "--capture-run" in OS.get_cmdline_user_args():
+		_start_run(1, "graveyard")
+		call_deferred("_prepare_capture_run")
+		return
+	if "--capture-settings" in OS.get_cmdline_user_args():
+		show_settings()
+		return
 	show_title()
+
+func _prepare_capture_run() -> void:
+	if is_instance_valid(active_arena):
+		active_arena._debug_command("stress")
+		Game.current_run.elapsed = 105.0
+		if "--inventory" in OS.get_cmdline_user_args():
+			for index in 16:
+				var item := DataRegistry.roll_item(12 + index, 8 + index % 5, ["lightning", "critical", "projectile"])
+				Game.inventory.push_front(item)
+			get_tree().paused = true
+			active_arena.hud.show_character()
 
 func _process(delta: float) -> void:
 	if is_instance_valid(title_art):
@@ -31,7 +58,7 @@ func _configure_input() -> void:
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
 		"dash": [KEY_SPACE], "skill_q": [KEY_Q], "skill_e": [KEY_E],
 		"ultimate": [KEY_R], "character": [KEY_TAB], "pause": [KEY_ESCAPE],
-		"interact": [KEY_F]
+		"interact": [KEY_F], "potion": [KEY_1]
 	}
 	for action in keys:
 		if not InputMap.has_action(action): InputMap.add_action(action, 0.2)
@@ -48,12 +75,32 @@ func _configure_input() -> void:
 		"attack": JOY_BUTTON_RIGHT_SHOULDER, "secondary": JOY_BUTTON_LEFT_SHOULDER,
 		"dash": JOY_BUTTON_A, "skill_q": JOY_BUTTON_X, "skill_e": JOY_BUTTON_Y,
 		"ultimate": JOY_BUTTON_B, "character": JOY_BUTTON_BACK, "pause": JOY_BUTTON_START,
-		"interact": JOY_BUTTON_DPAD_UP
+		"interact": JOY_BUTTON_DPAD_UP, "potion": JOY_BUTTON_DPAD_DOWN
 	}
 	for action in joypad:
 		var event := InputEventJoypadButton.new()
 		event.button_index = joypad[action]
 		InputMap.action_add_event(action, event)
+	var axes := {
+		"move_left": [JOY_AXIS_LEFT_X, -1.0], "move_right": [JOY_AXIS_LEFT_X, 1.0],
+		"move_up": [JOY_AXIS_LEFT_Y, -1.0], "move_down": [JOY_AXIS_LEFT_Y, 1.0],
+		"aim_left": [JOY_AXIS_RIGHT_X, -1.0], "aim_right": [JOY_AXIS_RIGHT_X, 1.0],
+		"aim_up": [JOY_AXIS_RIGHT_Y, -1.0], "aim_down": [JOY_AXIS_RIGHT_Y, 1.0]
+	}
+	for action in axes:
+		if not InputMap.has_action(action): InputMap.add_action(action, 0.22)
+		var motion := InputEventJoypadMotion.new()
+		motion.axis = axes[action][0]
+		motion.axis_value = axes[action][1]
+		InputMap.action_add_event(action, motion)
+	var right_trigger := InputEventJoypadMotion.new()
+	right_trigger.axis = JOY_AXIS_TRIGGER_RIGHT
+	right_trigger.axis_value = 1.0
+	InputMap.action_add_event("attack", right_trigger)
+	var left_trigger := InputEventJoypadMotion.new()
+	left_trigger.axis = JOY_AXIS_TRIGGER_LEFT
+	left_trigger.axis_value = 1.0
+	InputMap.action_add_event("secondary", left_trigger)
 
 func _new_screen() -> Control:
 	_clear_current()
@@ -64,7 +111,20 @@ func _new_screen() -> Control:
 	screen_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	screen_root.theme = UIFactory.game_theme()
 	layer.add_child(screen_root)
+	transition_rect = ColorRect.new()
+	transition_rect.color = Color("#050711")
+	transition_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	transition_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	screen_root.add_child(transition_rect)
+	call_deferred("_play_screen_transition")
 	return screen_root
+
+func _play_screen_transition() -> void:
+	if not is_instance_valid(transition_rect) or not is_instance_valid(screen_root): return
+	screen_root.move_child(transition_rect, screen_root.get_child_count() - 1)
+	var tween := transition_rect.create_tween()
+	tween.tween_property(transition_rect, "color:a", 0.0, 0.28)
+	tween.tween_callback(transition_rect.queue_free)
 
 func _clear_current() -> void:
 	if is_instance_valid(active_arena):
@@ -138,13 +198,18 @@ func show_title() -> void:
 	settings_button.pressed.connect(show_settings)
 	menu.add_child(settings_button)
 	var quit := UIFactory.button("QUIT TO DESKTOP")
-	quit.pressed.connect(func(): get_tree().quit())
+	quit.pressed.connect(_quit_game)
 	menu.add_child(quit)
 	menu_panel.add_child(UIFactory.margin(menu, 28))
 	menu_wrap.add_child(menu_panel)
 	content.add_child(menu_wrap)
 	screen_root.add_child(UIFactory.margin(content, 55))
 	start.grab_focus()
+
+func _quit_game() -> void:
+	AudioManager.shutdown()
+	await get_tree().create_timer(0.08, true, false, true).timeout
+	get_tree().quit()
 
 func show_run_setup() -> void:
 	_new_screen()
@@ -295,6 +360,14 @@ func show_meta() -> void:
 		buy.pressed.connect(_buy_meta.bind(offer[2], offer[3], offer[4]))
 		row.add_child(buy)
 		box.add_child(row)
+	var unlock_item := UIFactory.button("UNSEAL 3 ITEM BASES — 80")
+	unlock_item.disabled = Game.meta.currency < 80 or Game.meta.unlocked_items.size() >= DataRegistry.base_items.size() - 16
+	unlock_item.pressed.connect(_buy_unlock.bind("item", 80))
+	box.add_child(unlock_item)
+	var unlock_power := UIFactory.button("UNBIND A LEGENDARY POWER — 150")
+	unlock_power.disabled = Game.meta.currency < 150 or Game.meta.unlocked_powers.size() >= DataRegistry.legendary_powers.size() - 10
+	unlock_power.pressed.connect(_buy_unlock.bind("power", 150))
+	box.add_child(unlock_power)
 	var back := UIFactory.button("BACK TO TITLE", Vector2(300, 62))
 	back.pressed.connect(show_title)
 	box.add_child(back)
@@ -304,6 +377,27 @@ func _buy_meta(key: String, amount: int, cost: int) -> void:
 	if Game.meta.currency < cost: return
 	Game.meta.currency -= cost
 	Game.meta[key] += amount
+	SaveManager.save_game()
+	show_meta()
+
+func _buy_unlock(kind: String, cost: int) -> void:
+	if Game.meta.currency < cost: return
+	var starter_items := ["rift_repeater", "grave_razor", "stormneedle", "cinder_staff", "iron_cowl", "seer_hood", "ossuary_plate", "blood_coat", "razor_grips", "spark_gauntlets", "ashwalkers", "gale_treads", "storm_eye", "funeral_charm", "coil_ring", "red_oath"]
+	var starter_powers := ["storm_web", "red_bloom", "hoarfrost_step", "execution_oath", "trident_law", "funeral_pyres", "slow_constellation", "thunderheart", "winterglass", "plague_tide"]
+	var candidates: Array[String] = []
+	if kind == "item":
+		for item in DataRegistry.base_items:
+			if item.id not in starter_items and item.id not in Game.meta.unlocked_items: candidates.append(item.id)
+	else:
+		for power in DataRegistry.legendary_powers:
+			if power.id not in starter_powers and power.id not in Game.meta.unlocked_powers: candidates.append(power.id)
+	if candidates.is_empty(): return
+	candidates.shuffle()
+	Game.meta.currency -= cost
+	var count := mini(3, candidates.size()) if kind == "item" else 1
+	for index in count:
+		if kind == "item": Game.meta.unlocked_items.append(candidates[index])
+		else: Game.meta.unlocked_powers.append(candidates[index])
 	SaveManager.save_game()
 	show_meta()
 
@@ -337,20 +431,40 @@ func show_settings() -> void:
 	_new_screen()
 	_add_menu_background()
 	var box := VBoxContainer.new()
-	box.custom_minimum_size = Vector2(820, 840)
-	box.add_theme_constant_override("separation", 12)
+	box.custom_minimum_size = Vector2(1280, 820)
+	box.add_theme_constant_override("separation", 14)
 	box.add_child(UIFactory.heading("SETTINGS", 52, UIFactory.GOLD))
-	_add_toggle(box, "FULLSCREEN", "fullscreen")
-	_add_toggle(box, "V-SYNC", "vsync")
-	_add_toggle(box, "AUTO ATTACK", "auto_attack")
-	_add_toggle(box, "GAMEPAD VIBRATION", "gamepad_vibration")
-	_add_slider(box, "MASTER VOLUME", "master_volume", 0.0, 1.0, 0.05)
-	_add_slider(box, "MUSIC VOLUME", "music_volume", 0.0, 1.0, 0.05)
-	_add_slider(box, "SFX VOLUME", "sfx_volume", 0.0, 1.0, 0.05)
-	_add_slider(box, "SCREEN SHAKE", "screen_shake", 0.0, 1.0, 0.05)
-	_add_slider(box, "FLASH INTENSITY", "flash_intensity", 0.0, 1.0, 0.05)
-	_add_slider(box, "DAMAGE NUMBERS", "damage_numbers", 0.0, 1.0, 0.05)
-	_add_slider(box, "UI SCALE", "ui_scale", 0.8, 1.3, 0.05)
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 34)
+	var left := VBoxContainer.new()
+	left.custom_minimum_size.x = 610
+	left.add_theme_constant_override("separation", 10)
+	left.add_child(UIFactory.heading("DISPLAY & CONTROL", 24, UIFactory.CYAN))
+	_add_option(left, "RESOLUTION", "resolution", ["1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160"])
+	_add_option(left, "FPS LIMIT", "fps_limit", [60, 90, 120, 144, 240])
+	_add_toggle(left, "FULLSCREEN", "fullscreen")
+	_add_toggle(left, "V-SYNC", "vsync")
+	_add_toggle(left, "AUTO ATTACK", "auto_attack")
+	_add_toggle(left, "HOLD TO ATTACK", "hold_to_attack")
+	_add_toggle(left, "GAMEPAD VIBRATION", "gamepad_vibration")
+	_add_toggle(left, "AUTO SALVAGE COMMON", "auto_salvage_common")
+	_add_toggle(left, "AUTO SALVAGE MAGIC", "auto_salvage_magic")
+	_add_toggle(left, "AUTO SALVAGE RARE", "auto_salvage_rare")
+	columns.add_child(left)
+	var right := VBoxContainer.new()
+	right.custom_minimum_size.x = 610
+	right.add_theme_constant_override("separation", 10)
+	right.add_child(UIFactory.heading("AUDIO & ACCESSIBILITY", 24, UIFactory.CYAN))
+	_add_slider(right, "MASTER VOLUME", "master_volume", 0.0, 1.0, 0.05)
+	_add_slider(right, "MUSIC VOLUME", "music_volume", 0.0, 1.0, 0.05)
+	_add_slider(right, "SFX VOLUME", "sfx_volume", 0.0, 1.0, 0.05)
+	_add_slider(right, "UI VOLUME", "ui_volume", 0.0, 1.0, 0.05)
+	_add_slider(right, "SCREEN SHAKE", "screen_shake", 0.0, 1.0, 0.05)
+	_add_slider(right, "FLASH INTENSITY", "flash_intensity", 0.0, 1.0, 0.05)
+	_add_slider(right, "DAMAGE NUMBERS", "damage_numbers", 0.0, 1.0, 0.05)
+	_add_slider(right, "UI SCALE", "ui_scale", 0.8, 1.3, 0.05)
+	columns.add_child(right)
+	box.add_child(columns)
 	var back := UIFactory.button("SAVE & RETURN")
 	back.pressed.connect(func(): Game.apply_settings(); SaveManager.save_game(); show_title())
 	box.add_child(back)
@@ -384,6 +498,20 @@ func _add_slider(parent: VBoxContainer, title: String, key: String, minimum: flo
 	value_label.custom_minimum_size.x = 70
 	slider.value_changed.connect(func(value: float): value_label.text = "%d%%" % int(value * 100.0))
 	row.add_child(value_label)
+	parent.add_child(row)
+
+func _add_option(parent: VBoxContainer, title: String, key: String, values: Array) -> void:
+	var row := HBoxContainer.new()
+	var text_label := UIFactory.label(title, 20, UIFactory.TEXT)
+	text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(text_label)
+	var select := OptionButton.new()
+	select.custom_minimum_size = Vector2(280, 48)
+	for index in values.size():
+		select.add_item(str(values[index]), index)
+		if str(values[index]) == str(Game.settings[key]): select.select(index)
+	select.item_selected.connect(func(index: int): Game.settings[key] = values[index])
+	row.add_child(select)
 	parent.add_child(row)
 
 func _add_menu_background() -> void:

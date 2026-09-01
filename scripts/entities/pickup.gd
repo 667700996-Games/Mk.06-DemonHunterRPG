@@ -82,6 +82,7 @@ func _draw() -> void:
 				draw_rect(Rect2(-3, -height + bob, 6, height), Color(color, 0.5))
 				draw_rect(Rect2(-14, -height + bob, 28, height), Color(color, 0.07))
 			var font := ThemeDB.fallback_font
-			var label := "%s\n%s" % [item.get("rarity", "ITEM").to_upper(), item.get("name", "Unknown")]
-			draw_string(font, Vector2(-80, 39 + bob), label, HORIZONTAL_ALIGNMENT_CENTER, 160, 14, color)
-
+			draw_string_outline(font, Vector2(-90, 40 + bob), item.get("rarity", "ITEM").to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 180, 13, 4, Color("#080a12"))
+			draw_string(font, Vector2(-90, 40 + bob), item.get("rarity", "ITEM").to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 180, 13, color)
+			draw_string_outline(font, Vector2(-120, 58 + bob), item.get("name", "Unknown"), HORIZONTAL_ALIGNMENT_CENTER, 240, 14, 4, Color("#080a12"))
+			draw_string(font, Vector2(-120, 58 + bob), item.get("name", "Unknown"), HORIZONTAL_ALIGNMENT_CENTER, 240, 14, Color.WHITE)

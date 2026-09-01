@@ -43,7 +43,7 @@ func simulate(delta: float, player: RiftPlayer) -> bool:
 
 func _draw() -> void:
 	if not active: return
-	var color := RiftEnemy.ELEMENT_COLORS.get(element, Color("#ff5c4d"))
+	var color: Color = RiftEnemy.ELEMENT_COLORS.get(element, Color("#ff5c4d"))
 	if not triggered:
 		var ratio := clampf(age / warning_time, 0.0, 1.0)
 		draw_circle(Vector2.ZERO, radius, Color(color, 0.08 + ratio * 0.08))

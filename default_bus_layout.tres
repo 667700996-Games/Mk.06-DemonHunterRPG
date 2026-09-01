@@ -1,4 +1,4 @@
-[gd_resource format=3]
+[gd_resource type="AudioBusLayout" format=3]
 
 [resource]
 bus/0/name = &"Master"
@@ -25,4 +25,3 @@ bus/3/mute = false
 bus/3/bypass_fx = false
 bus/3/volume_db = 0.0
 bus/3/send = &"Master"
-

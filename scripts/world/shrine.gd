@@ -32,7 +32,7 @@ func simulate(delta: float, player_position: Vector2) -> void:
 func _draw() -> void:
 	if not active: return
 	var pulse := 0.65 + sin(age * 3.0) * 0.2
-	var color := {
+	var color: Color = {
 		"Frenzy": Color("#ff466c"), "Greed": Color("#ffc857"), "Thunder": Color("#6ee7ff"),
 		"Blood": Color("#d91f48"), "Cursed Chest": Color("#b970ff")
 	}.get(shrine_type, Color.WHITE)
@@ -52,4 +52,3 @@ func _draw() -> void:
 		var font := ThemeDB.fallback_font
 		draw_string_outline(font, Vector2(-120, -88), "F — INVOKE %s" % shrine_type.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 240, 18, 5, Color("#090a14"))
 		draw_string(font, Vector2(-120, -88), "F — INVOKE %s" % shrine_type.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 240, 18, color)
-

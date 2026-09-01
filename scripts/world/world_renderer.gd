@@ -54,7 +54,7 @@ func _draw() -> void:
 
 func _draw_prop(p: Vector2, kind: int, prop_scale: float, flip: float, dark: Color, accent: Color) -> void:
 	var shadow := Color(0.0, 0.0, 0.0, 0.22)
-	draw_ellipse(p + Vector2(8, 10), Vector2(30, 11) * prop_scale, shadow)
+	draw_ellipse(p + Vector2(8, 10), 30.0 * prop_scale, 11.0 * prop_scale, shadow)
 	match kind:
 		0: # crooked headstone
 			draw_rect(Rect2(p + Vector2(-17, -44) * prop_scale, Vector2(34, 48) * prop_scale), dark.lightened(0.18))
@@ -75,9 +75,3 @@ func _draw_prop(p: Vector2, kind: int, prop_scale: float, flip: float, dark: Col
 		_: # bone pile
 			draw_line(p + Vector2(-22, 3), p + Vector2(19, -9), dark.lightened(0.35), 7.0)
 			draw_line(p + Vector2(-18, -11), p + Vector2(23, 4), dark.lightened(0.35), 7.0)
-
-func draw_ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
-	draw_set_transform(center, 0.0, radii)
-	draw_circle(Vector2.ZERO, 1.0, color)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-

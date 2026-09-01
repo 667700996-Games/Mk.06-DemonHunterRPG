@@ -13,6 +13,7 @@ const CYAN := Color("#52d8ff")
 
 static func game_theme() -> Theme:
 	var theme := Theme.new()
+	theme.default_base_scale = float(Game.settings.get("ui_scale", 1.0))
 	var regular := SystemFont.new()
 	regular.font_names = PackedStringArray(["Avenir Next", "Bahnschrift", "Trebuchet MS", "Arial"])
 	regular.font_weight = 600

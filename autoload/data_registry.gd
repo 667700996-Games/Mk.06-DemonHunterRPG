@@ -135,13 +135,13 @@ func boss_for_biome(biome_id: String) -> Dictionary:
 	var biome := get_biome(biome_id)
 	var pool: PackedStringArray = biome.get("bosses", PackedStringArray())
 	if pool.is_empty(): return bosses.pick_random()
-	return by_boss.get(pool.pick_random(), bosses[0])
+	return by_boss.get(pool[randi_range(0, pool.size() - 1)], bosses[0])
 
 func roll_item(item_level: int, tier: int, favored_tags: Array = []) -> Dictionary:
-	var base := _weighted_base_item(favored_tags)
-	var rarity_index := _roll_rarity(tier)
-	var rarity := RARITIES[rarity_index]
-	var affix_count := [0, 2, 3, 4, 5, 6][rarity_index]
+	var base: Dictionary = _weighted_base_item(favored_tags)
+	var rarity_index: int = _roll_rarity(tier)
+	var rarity: String = RARITIES[rarity_index]
+	var affix_count: int = [0, 2, 3, 4, 5, 6][rarity_index]
 	var selected: Array[Dictionary] = []
 	var candidates := affixes.duplicate()
 	candidates.shuffle()
@@ -173,7 +173,10 @@ func roll_item(item_level: int, tier: int, favored_tags: Array = []) -> Dictiona
 
 func _weighted_base_item(favored_tags: Array) -> Dictionary:
 	var choices: Array = []
+	var starter_ids := ["rift_repeater", "grave_razor", "stormneedle", "cinder_staff", "iron_cowl", "seer_hood", "ossuary_plate", "blood_coat", "razor_grips", "spark_gauntlets", "ashwalkers", "gale_treads", "storm_eye", "funeral_charm", "coil_ring", "red_oath"]
+	var unlocked: Array = Game.meta.get("unlocked_items", [])
 	for item in base_items:
+		if item.id not in starter_ids and item.id not in unlocked: continue
 		choices.append(item)
 		for tag in favored_tags:
 			if tag in item.tags: choices.append(item)
@@ -181,7 +184,10 @@ func _weighted_base_item(favored_tags: Array) -> Dictionary:
 
 func _weighted_power(tags: Array) -> Dictionary:
 	var choices: Array = []
+	var starter_ids := ["storm_web", "red_bloom", "hoarfrost_step", "execution_oath", "trident_law", "funeral_pyres", "slow_constellation", "thunderheart", "winterglass", "plague_tide"]
+	var unlocked: Array = Game.meta.get("unlocked_powers", [])
 	for power in legendary_powers:
+		if power.id not in starter_ids and power.id not in unlocked: continue
 		choices.append(power)
 		for tag in tags:
 			if tag in power.tags: choices.append(power)

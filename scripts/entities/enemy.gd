@@ -33,6 +33,7 @@ var statuses: Dictionary = {}
 var last_source: Dictionary = {}
 var pending_charge := 0.0
 var charge_direction := Vector2.ZERO
+var boss_modifier := ""
 
 func activate(record: Dictionary, spawn_position: Vector2, tier: int, elapsed: float, make_elite := false, affix_count := 0, make_boss := false) -> void:
 	data = record
@@ -60,7 +61,7 @@ func activate(record: Dictionary, spawn_position: Vector2, tier: int, elapsed: f
 		contact_damage *= 1.8
 		radius *= 1.35
 		elite_affixes.clear()
-		var choices := Array(ELITE_AFFIXES)
+		var choices: Array = ELITE_AFFIXES.duplicate()
 		choices.shuffle()
 		for index in mini(affix_count, choices.size()): elite_affixes.append(choices[index])
 		if "Berserker" in elite_affixes: speed *= 1.25
@@ -70,6 +71,9 @@ func activate(record: Dictionary, spawn_position: Vector2, tier: int, elapsed: f
 		speed = 74.0
 		radius = 78.0
 		elite_affixes.clear()
+		boss_modifier = ["Relentless", "Volcanic", "Stormbound", "Graveborn"][(tier - 1) % 4]
+		if boss_modifier == "Relentless": speed *= 1.22
+	else: boss_modifier = ""
 	health = max_health
 	modulate = Color.WHITE
 	queue_redraw()
@@ -124,9 +128,17 @@ func _process_role(distance: float, player_position: Vector2) -> void:
 		attack_requested.emit(self, "buff", {"radius": 260.0})
 	if elite and special_timer <= 0.0:
 		special_timer = randf_range(3.0, 5.0)
-		if "Mortar" in elite_affixes: attack_requested.emit(self, "mortar", {"target": player_position, "damage": contact_damage * 1.4})
-		elif "Arcane" in elite_affixes: attack_requested.emit(self, "arcane", {"count": 6, "damage": contact_damage})
-		elif "Summoner" in elite_affixes: attack_requested.emit(self, "summon", {"count": 4})
+		for affix in elite_affixes:
+			match affix:
+				"Mortar": attack_requested.emit(self, "mortar", {"target": player_position, "damage": contact_damage * 1.4})
+				"Arcane": attack_requested.emit(self, "arcane", {"count": 6, "damage": contact_damage, "element": "void"})
+				"Summoner": attack_requested.emit(self, "summon", {"count": 4})
+				"Frozen": attack_requested.emit(self, "affix_zone", {"target": player_position, "radius": 115.0, "damage": contact_damage, "element": "ice"})
+				"Poison": attack_requested.emit(self, "affix_zone", {"target": global_position, "radius": 135.0, "damage": contact_damage * 0.7, "element": "poison"})
+				"Teleporter": global_position = player_position + Vector2.from_angle(randf() * TAU) * 190.0
+				"Waller": attack_requested.emit(self, "waller", {"target": player_position, "damage": contact_damage})
+				"Lightning": attack_requested.emit(self, "arcane", {"count": 4, "damage": contact_damage * 0.8, "element": "lightning"})
+				"Fire Trail": attack_requested.emit(self, "affix_zone", {"target": global_position, "radius": 82.0, "damage": contact_damage * 0.8, "element": "fire"})
 
 func _process_boss(distance: float, player_position: Vector2) -> void:
 	var ratio := health / max_health
@@ -135,9 +147,12 @@ func _process_boss(distance: float, player_position: Vector2) -> void:
 		phase = new_phase
 		attack_requested.emit(self, "phase", {"phase": phase})
 	if special_timer <= 0.0:
-		special_timer = maxf(1.25, 3.4 - phase * 0.48)
+		special_timer = maxf(1.1, 3.4 - phase * 0.48) * (0.72 if boss_modifier == "Relentless" else 1.0)
 		var patterns: PackedStringArray = data.get("patterns", PackedStringArray(["nova", "lanes", "charge"]))
 		attack_requested.emit(self, "boss_pattern", {"pattern": patterns[(phase - 1) % patterns.size()], "phase": phase, "target": player_position, "damage": contact_damage})
+		if boss_modifier == "Volcanic": attack_requested.emit(self, "mortar", {"target": player_position, "damage": contact_damage})
+		elif boss_modifier == "Stormbound": attack_requested.emit(self, "arcane", {"count": 5 + phase, "damage": contact_damage * 0.7, "element": "lightning"})
+		elif boss_modifier == "Graveborn": attack_requested.emit(self, "summon", {"count": phase})
 	if distance < 180.0 and attack_cooldown <= 0.0:
 		attack_cooldown = 1.6
 		attack_requested.emit(self, "boss_slam", {"radius": 210.0, "damage": contact_damage * 1.2})
@@ -151,9 +166,13 @@ func take_damage(amount: float, context: Dictionary) -> bool:
 	flash = 1.0
 	if context.get("element", "") in ["fire", "poison", "bleed"]:
 		var element: String = context.element
-		statuses[element] = {"time": 3.5, "damage": actual * 0.12, "tick": 0.45, "source": context}
+		var status_time: float = 9999.0 if element == "poison" and context.get("effects", {}).has("eternal_poison") else 3.5
+		var stack_scale: float = float(context.get("effects", {}).get("eternal_poison", 1.0)) if element == "poison" else 1.0
+		statuses[element] = {"time": status_time, "damage": actual * 0.12 * stack_scale, "tick": 0.45, "source": context}
 	if context.get("element", "") == "ice" and randf() < 0.28:
 		statuses.ice = {"time": 1.4, "damage": 0.0, "tick": 1.0, "source": context}
+	if context.get("force_freeze", false):
+		statuses.ice = {"time": 2.2, "damage": 0.0, "tick": 1.0, "source": context}
 	if health <= 0.0:
 		killed.emit(self, context)
 		return true
@@ -171,6 +190,7 @@ func _tick_statuses(delta: float) -> void:
 		if status.tick <= 0.0 and status.damage > 0.0:
 			status.tick = 0.5
 			health -= status.damage
+			if key == "bleed": attack_requested.emit(self, "status_tick", {"element": key, "effects": status.source.get("effects", {})})
 			if health <= 0.0:
 				killed.emit(self, status.source)
 				return

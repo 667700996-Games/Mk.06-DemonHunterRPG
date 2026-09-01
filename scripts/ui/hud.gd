@@ -3,6 +3,9 @@ extends CanvasLayer
 
 signal upgrade_selected(upgrade: Dictionary)
 signal reroll_requested
+signal banish_requested(upgrade: Dictionary)
+signal lock_requested(upgrade: Dictionary)
+signal favor_requested(tag: String)
 signal interface_closed
 signal return_to_menu
 
@@ -15,6 +18,8 @@ var level_text: Label
 var timer_text: Label
 var tier_text: Label
 var kill_text: Label
+var danger_text: Label
+var buff_text: Label
 var boss_panel: PanelContainer
 var boss_bar: ProgressBar
 var boss_name: Label
@@ -26,6 +31,8 @@ var announcement_tween: Tween
 var overlay: Control
 var latest_item: Dictionary = {}
 var fps_label: Label
+var inventory_filter := "ALL"
+var inventory_sort := "BUILD SCORE"
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -47,12 +54,19 @@ func _build_hud() -> void:
 	top.offset_bottom = 170
 	top.add_theme_constant_override("separation", 28)
 	root.add_child(top)
+	buff_text = UIFactory.label("", 16, UIFactory.GOLD)
+	buff_text.position = Vector2(34, 172)
+	buff_text.custom_minimum_size = Vector2(430, 28)
+	root.add_child(buff_text)
 
 	var vitals := PanelContainer.new()
 	vitals.custom_minimum_size = Vector2(430, 130)
 	var vital_box := VBoxContainer.new()
 	var name_row := HBoxContainer.new()
-	name_row.add_child(UIFactory.heading("THE LAST HUNTER", 22, UIFactory.TEXT))
+	var hunter_name := UIFactory.heading("THE LAST HUNTER", 22, UIFactory.TEXT)
+	hunter_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hunter_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	name_row.add_child(hunter_name)
 	level_text = UIFactory.label("LV 1", 19, UIFactory.GOLD, HORIZONTAL_ALIGNMENT_RIGHT)
 	level_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_row.add_child(level_text)
@@ -64,7 +78,7 @@ func _build_hud() -> void:
 	vital_box.add_child(hp_bar)
 	barrier_bar = _bar(Color("#58d7ff"), 12)
 	vital_box.add_child(barrier_bar)
-	vitals.add_child(vital_box)
+	vitals.add_child(UIFactory.margin(vital_box, 10))
 	top.add_child(vitals)
 
 	var center := PanelContainer.new()
@@ -72,7 +86,9 @@ func _build_hud() -> void:
 	center.custom_minimum_size.y = 130
 	var center_box := VBoxContainer.new()
 	var rift_row := HBoxContainer.new()
-	rift_row.add_child(UIFactory.label("GREATER RIFT", 18, UIFactory.MUTED))
+	var rift_label := UIFactory.label("GREATER RIFT", 18, UIFactory.MUTED)
+	rift_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rift_row.add_child(rift_label)
 	timer_text = UIFactory.heading("00:00", 24, UIFactory.TEXT)
 	timer_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	timer_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -84,7 +100,7 @@ func _build_hud() -> void:
 	xp_bar = _bar(UIFactory.CYAN, 12)
 	xp_bar.max_value = 1.0
 	center_box.add_child(xp_bar)
-	center.add_child(center_box)
+	center.add_child(UIFactory.margin(center_box, 10))
 	top.add_child(center)
 
 	var status := PanelContainer.new()
@@ -94,9 +110,11 @@ func _build_hud() -> void:
 	status_box.add_child(tier_text)
 	kill_text = UIFactory.label("0 KILLS  •  0 ELITES", 18, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	status_box.add_child(kill_text)
+	danger_text = UIFactory.label("NO ELITE SIGNAL", 14, Color("#ef7994"), HORIZONTAL_ALIGNMENT_CENTER)
+	status_box.add_child(danger_text)
 	fps_label = UIFactory.label("", 15, Color("#6f829f"), HORIZONTAL_ALIGNMENT_CENTER)
 	status_box.add_child(fps_label)
-	status.add_child(status_box)
+	status.add_child(UIFactory.margin(status_box, 10))
 	top.add_child(status)
 
 	boss_panel = PanelContainer.new()
@@ -125,6 +143,7 @@ func _build_hud() -> void:
 	bottom.alignment = BoxContainer.ALIGNMENT_CENTER
 	bottom.add_theme_constant_override("separation", 10)
 	var skills := [
+		["potion", "1", "POTION", Color("#5ee39a")],
 		["secondary", "RMB", "NOVA", Color("#ff4f76")], ["q", "Q", "METEOR", Color("#ff7b35")],
 		["e", "E", "AEGIS", Color("#55d9ff")], ["dash", "SPACE", "DASH", Color("#a26cff")],
 		["r", "R", "RIFTFALL", Color("#ffd166")]
@@ -177,7 +196,7 @@ func _skill_cell(key: String, title: String, color: Color) -> PanelContainer:
 	panel.set_meta("fill", fill)
 	return panel
 
-func update_hud(player: RiftPlayer, rift_progress: float, rift_goal: float, boss: RiftEnemy = null) -> void:
+func update_hud(player: RiftPlayer, rift_progress: float, rift_goal: float, boss: RiftEnemy = null, danger_info := "", buffs: Dictionary = {}) -> void:
 	hp_bar.max_value = player.max_health
 	hp_bar.value = maxf(player.health, 0.0)
 	hp_text.text = "%d / %d" % [maxi(0, int(player.health)), int(player.max_health)]
@@ -190,15 +209,19 @@ func update_hud(player: RiftPlayer, rift_progress: float, rift_goal: float, boss
 	rift_bar.value = clampf(rift_progress / maxf(rift_goal, 1.0), 0.0, 1.0)
 	timer_text.text = "%02d:%02d" % [int(Game.current_run.elapsed) / 60, int(Game.current_run.elapsed) % 60]
 	tier_text.text = "TIER %02d" % Game.current_run.tier
-	kill_text.text = "%s KILLS  •  %s ELITES" % [_compact(Game.current_run.kills), Game.current_run.elite_kills]
-	fps_label.text = "%d FPS  •  %s ACTIVE" % [Engine.get_frames_per_second(), _compact(get_tree().get_node_count())]
+	kill_text.text = "%s KILLS  •  %s ELITES  •  %dG" % [_compact(Game.current_run.kills), Game.current_run.elite_kills, Game.current_run.gold]
+	danger_text.text = danger_info if not danger_info.is_empty() else "NO ELITE SIGNAL"
+	var buff_lines: Array[String] = []
+	for key in buffs: buff_lines.append("%s %ds" % [str(key).to_upper(), int(buffs[key])])
+	buff_text.text = "  •  ".join(buff_lines)
+	fps_label.text = "%d FPS  •  %s NODES" % [Engine.get_frames_per_second(), _compact(get_tree().get_node_count())]
 	var cooldowns := player.cooldown_ratios()
 	for key in skill_fills: skill_fills[key].value = cooldowns.get(key, 1.0)
 	if is_instance_valid(boss) and boss.active:
 		boss_panel.visible = true
 		boss_bar.value = maxf(boss.health / boss.max_health, 0.0)
 		boss_name.text = boss.data.get("name", "RIFT GUARDIAN").to_upper()
-		boss_phase.text = "PHASE %s" % _roman(maxi(1, boss.phase))
+		boss_phase.text = "PHASE %s  •  %s" % [_roman(maxi(1, boss.phase)), boss.boss_modifier.to_upper()]
 	else:
 		boss_panel.visible = false
 
@@ -221,15 +244,23 @@ func announce(text: String, color := Color.WHITE, seconds := 1.5) -> void:
 func show_loot(item: Dictionary, equipped: Dictionary) -> void:
 	latest_item = item
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(390, 116)
+	panel.custom_minimum_size = Vector2(410, 154)
 	var color: Color = item.get("color", Color.WHITE)
 	panel.add_theme_stylebox_override("panel", UIFactory.panel_style(Color(0.035, 0.045, 0.08, 0.96), color, 2 if item.rarity_index < 4 else 4, 7))
 	var box := VBoxContainer.new()
 	box.add_child(UIFactory.label("%s  •  ITEM LEVEL %d" % [item.rarity.to_upper(), item.item_level], 15, color))
 	box.add_child(UIFactory.label(item.name, 22, UIFactory.TEXT))
+	var option_lines: Array[String] = []
+	for affix in item.get("affixes", []).slice(0, 2): option_lines.append("%s  +%.1f" % [affix.name, affix.value])
+	if not item.get("legendary", {}).is_empty(): option_lines.append("◆ " + item.legendary.description)
+	var options_label := UIFactory.label("\n".join(option_lines), 14, UIFactory.MUTED)
+	options_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(options_label)
 	var difference := Game.item_score(item, Game.build_tags()) - Game.item_score(equipped, Game.build_tags())
 	var compare_color := Color("#59e391") if difference >= 0.0 else Color("#f16975")
-	box.add_child(UIFactory.label("%+.0f BUILD POWER   •   F QUICK EQUIP" % difference, 16, compare_color))
+	var toughness := _category_score(item, ["max_health", "barrier", "damage_reduction", "barrier_regen"]) - _category_score(equipped, ["max_health", "barrier", "damage_reduction", "barrier_regen"])
+	var synergy := _synergy_score(item, Game.build_tags()) - _synergy_score(equipped, Game.build_tags())
+	box.add_child(UIFactory.label("DMG %+.0f  •  TOUGH %+.0f  •  SYNERGY %+.0f  •  F EQUIP" % [difference, toughness, synergy], 14, compare_color))
 	panel.add_child(box)
 	toast_layer.add_child(panel)
 	while toast_layer.get_child_count() > 4: toast_layer.get_child(0).queue_free()
@@ -240,6 +271,18 @@ func show_loot(item: Dictionary, equipped: Dictionary) -> void:
 	tween.tween_interval(4.8)
 	tween.tween_property(panel, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(panel.queue_free)
+
+func _category_score(item: Dictionary, stats: Array) -> float:
+	var score := 0.0
+	for affix in item.get("affixes", []):
+		if affix.get("stat", "") in stats: score += float(affix.get("value", 0.0))
+	return score
+
+func _synergy_score(item: Dictionary, tags: Dictionary) -> float:
+	var score := 0.0
+	for tag in item.get("tags", []): score += tags.get(tag, 0) * 10.0
+	for tag in item.get("legendary", {}).get("tags", []): score += tags.get(tag, 0) * 18.0
+	return score
 
 func show_level_up(options: Array[Dictionary], rerolls: int) -> void:
 	_close_overlay()
@@ -264,11 +307,29 @@ func show_level_up(options: Array[Dictionary], rerolls: int) -> void:
 	box.add_child(cards)
 	var footer := HBoxContainer.new()
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
-	var reroll := UIFactory.button("REROLL (%d)" % rerolls, Vector2(300, 58))
-	reroll.disabled = rerolls <= 0
+	footer.add_theme_constant_override("separation", 8)
+	var reroll := UIFactory.button("REROLL (%d FATE / 100G)" % rerolls, Vector2(340, 58))
+	reroll.disabled = rerolls <= 0 and Game.current_run.gold < 100
 	reroll.pressed.connect(func(): reroll_requested.emit())
 	footer.add_child(reroll)
 	box.add_child(footer)
+	var control_row := HBoxContainer.new()
+	control_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	control_row.add_theme_constant_override("separation", 7)
+	for index in options.size():
+		var banish := UIFactory.button("BANISH %d" % (index + 1), Vector2(125, 42))
+		banish.add_theme_font_size_override("font_size", 14)
+		banish.pressed.connect(func(): banish_requested.emit(options[index]))
+		control_row.add_child(banish)
+		var lock := UIFactory.button("LOCK %d" % (index + 1), Vector2(105, 42))
+		lock.add_theme_font_size_override("font_size", 14)
+		lock.pressed.connect(func(): lock_requested.emit(options[index]))
+		control_row.add_child(lock)
+		var favor := UIFactory.button("FAVOR %d" % (index + 1), Vector2(115, 42))
+		favor.add_theme_font_size_override("font_size", 14)
+		favor.pressed.connect(func(): favor_requested.emit(options[index].tag))
+		control_row.add_child(favor)
+	box.add_child(control_row)
 	_add_overlay_panel(box)
 	if cards.get_child_count() > 0: cards.get_child(0).grab_focus()
 
@@ -285,6 +346,9 @@ func show_pause() -> void:
 	var character := UIFactory.button("CHARACTER & LOOT")
 	character.pressed.connect(show_character)
 	box.add_child(character)
+	var settings_button := UIFactory.button("SETTINGS & ACCESSIBILITY")
+	settings_button.pressed.connect(show_ingame_settings)
+	box.add_child(settings_button)
 	var settings_note := UIFactory.label("Accessibility settings are available from the title screen.\nAuto-attack: %s  •  Screen shake: %d%%" % ["ON" if Game.settings.auto_attack else "OFF", int(Game.settings.screen_shake * 100)], 17, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	settings_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(settings_note)
@@ -293,6 +357,42 @@ func show_pause() -> void:
 	box.add_child(menu)
 	_add_overlay_panel(box)
 	resume.grab_focus()
+
+func show_ingame_settings() -> void:
+	_close_overlay()
+	overlay = _overlay_base()
+	var box := VBoxContainer.new()
+	box.custom_minimum_size = Vector2(680, 690)
+	box.add_theme_constant_override("separation", 12)
+	box.add_child(UIFactory.heading("ACCESSIBILITY", 42, UIFactory.GOLD))
+	for entry in [["AUTO ATTACK", "auto_attack"], ["GAMEPAD VIBRATION", "gamepad_vibration"]]:
+		var row := HBoxContainer.new()
+		var title := UIFactory.label(entry[0], 19, UIFactory.TEXT)
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(title)
+		var toggle := CheckButton.new()
+		toggle.button_pressed = bool(Game.settings[entry[1]])
+		toggle.toggled.connect(func(value: bool): Game.settings[entry[1]] = value)
+		row.add_child(toggle)
+		box.add_child(row)
+	for entry in [["MASTER VOLUME", "master_volume"], ["SCREEN SHAKE", "screen_shake"], ["FLASH INTENSITY", "flash_intensity"], ["DAMAGE NUMBERS", "damage_numbers"]]:
+		var row := HBoxContainer.new()
+		var title := UIFactory.label(entry[0], 19, UIFactory.TEXT)
+		title.custom_minimum_size.x = 250
+		row.add_child(title)
+		var slider := HSlider.new()
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+		slider.step = 0.05
+		slider.value = float(Game.settings[entry[1]])
+		slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		slider.value_changed.connect(func(value: float): Game.settings[entry[1]] = value; AudioManager.apply_volumes())
+		row.add_child(slider)
+		box.add_child(row)
+	var back := UIFactory.button("SAVE & BACK")
+	back.pressed.connect(func(): Game.apply_settings(); SaveManager.save_game(); show_pause())
+	box.add_child(back)
+	_add_overlay_panel(box)
 
 func show_character() -> void:
 	_close_overlay()
@@ -316,7 +416,8 @@ func show_character() -> void:
 		var slot_label := UIFactory.label(slot.replace("_", " ").to_upper(), 16, UIFactory.MUTED)
 		slot_label.custom_minimum_size.x = 110
 		row_box.add_child(slot_label)
-		var item_label := UIFactory.label(item.get("name", "— EMPTY —"), 18, item.get("color", Color("#65728a")))
+		var item_color := DataRegistry.rarity_color(item.get("rarity", "Common")) if not item.is_empty() else Color("#65728a")
+		var item_label := UIFactory.label(item.get("name", "— EMPTY —"), 18, item_color)
 		item_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row_box.add_child(item_label)
 		row_box.add_child(UIFactory.label("%.0f" % Game.item_score(item, tags), 18, UIFactory.TEXT, HORIZONTAL_ALIGNMENT_RIGHT))
@@ -327,11 +428,29 @@ func show_character() -> void:
 	inventory_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	inventory_box.add_child(UIFactory.heading("RECENT LOOT", 42, UIFactory.TEXT))
 	inventory_box.add_child(UIFactory.label("Build-aware score compares tags, affixes, and legendary synergy.", 17, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER))
+	var tools := HBoxContainer.new()
+	tools.add_child(UIFactory.label("FILTER", 15, UIFactory.MUTED))
+	var filter_select := OptionButton.new()
+	for value in ["ALL", "RARE+", "LEGENDARY+", "BUILD TAGS"]: filter_select.add_item(value)
+	filter_select.select(maxi(0, ["ALL", "RARE+", "LEGENDARY+", "BUILD TAGS"].find(inventory_filter)))
+	filter_select.item_selected.connect(func(index: int): inventory_filter = filter_select.get_item_text(index); show_character())
+	tools.add_child(filter_select)
+	tools.add_child(UIFactory.label("SORT", 15, UIFactory.MUTED))
+	var sort_select := OptionButton.new()
+	for value in ["BUILD SCORE", "RARITY", "ITEM LEVEL"]: sort_select.add_item(value)
+	sort_select.select(maxi(0, ["BUILD SCORE", "RARITY", "ITEM LEVEL"].find(inventory_sort)))
+	sort_select.item_selected.connect(func(index: int): inventory_sort = sort_select.get_item_text(index); show_character())
+	tools.add_child(sort_select)
+	var salvage_low := UIFactory.button("SALVAGE LOW", Vector2(155, 44))
+	salvage_low.add_theme_font_size_override("font_size", 15)
+	salvage_low.pressed.connect(func(): Game.auto_salvage(); show_character())
+	tools.add_child(salvage_low)
+	inventory_box.add_child(tools)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for item in Game.inventory.slice(0, 24):
+	for item in _filtered_inventory(tags).slice(0, 30):
 		list.add_child(_inventory_row(item, tags))
 	if Game.inventory.is_empty(): list.add_child(UIFactory.label("No loot carried. The rift is hungry.", 21, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER))
 	scroll.add_child(list)
@@ -353,12 +472,32 @@ func _inventory_row(item: Dictionary, tags: Dictionary) -> PanelContainer:
 	var equip := UIFactory.button("EQUIP", Vector2(120, 52))
 	equip.pressed.connect(func(): Game.equip_item(item); show_character())
 	row.add_child(equip)
+	var favorite := UIFactory.button("★" if item.get("favorite", false) else "☆", Vector2(58, 52))
+	favorite.pressed.connect(func(): item.favorite = not item.get("favorite", false); Game.inventory_changed.emit(); show_character())
+	row.add_child(favorite)
 	var salvage := UIFactory.button("SALVAGE", Vector2(140, 52))
 	salvage.disabled = item.get("favorite", false)
 	salvage.pressed.connect(func(): Game.salvage_item(item); show_character())
 	row.add_child(salvage)
 	panel.add_child(row)
 	return panel
+
+func _filtered_inventory(tags: Dictionary) -> Array[Dictionary]:
+	var output: Array[Dictionary] = []
+	for item in Game.inventory:
+		var include := inventory_filter == "ALL"
+		if inventory_filter == "RARE+": include = item.get("rarity_index", 0) >= 2
+		elif inventory_filter == "LEGENDARY+": include = item.get("rarity_index", 0) >= 4
+		elif inventory_filter == "BUILD TAGS":
+			include = false
+			for tag in item.get("tags", []):
+				if tags.get(tag, 0) > 0: include = true
+		if include: output.append(item)
+	match inventory_sort:
+		"RARITY": output.sort_custom(func(a, b): return a.get("rarity_index", 0) > b.get("rarity_index", 0))
+		"ITEM LEVEL": output.sort_custom(func(a, b): return a.get("item_level", 0) > b.get("item_level", 0))
+		_: output.sort_custom(func(a, b): return Game.item_score(a, tags) > Game.item_score(b, tags))
+	return output
 
 func has_overlay() -> bool:
 	return is_instance_valid(overlay)
