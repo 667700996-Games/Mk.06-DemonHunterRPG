@@ -68,7 +68,7 @@ func _parse_biome_records(lines: PackedStringArray) -> Array[Dictionary]:
 	var output: Array[Dictionary] = []
 	for line in lines:
 		var p := _parts(line)
-		if p.size() < 9: continue
+		if p.size() < 8: continue
 		output.append({"id": p[0], "name": p[1], "floor": Color("#" + p[2]),
 			"accent_dark": Color("#" + p[3]), "accent": Color("#" + p[4]), "description": p[5],
 			"bosses": p[6].split(","), "enemies": p[7].split(",")})
@@ -201,4 +201,3 @@ func _roll_rarity(tier: int) -> int:
 func rarity_color(rarity: String) -> Color:
 	var index := RARITIES.find(rarity)
 	return RARITY_COLORS[maxi(index, 0)]
-

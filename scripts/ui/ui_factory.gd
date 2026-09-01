@@ -66,7 +66,7 @@ static func heading(text: String, size := 40, color := TEXT) -> Label:
 	font.font_names = PackedStringArray(["Avenir Next Condensed", "Bahnschrift Condensed", "Trebuchet MS"])
 	font.font_weight = 900
 	control.add_theme_font_override("font", font)
-	control.add_theme_constant_override("outline_size", maxi(2, size / 14))
+	control.add_theme_constant_override("outline_size", maxi(2, int(size / 14.0)))
 	control.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.05, 0.9))
 	return control
 
@@ -92,4 +92,3 @@ static func margin(child: Control, amount := 32) -> MarginContainer:
 	container.add_theme_constant_override("margin_bottom", amount)
 	container.add_child(child)
 	return container
-

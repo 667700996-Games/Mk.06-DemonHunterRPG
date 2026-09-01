@@ -29,7 +29,6 @@ func _configure_input() -> void:
 	var keys := {
 		"move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN],
-		"attack": [MOUSE_BUTTON_LEFT], "secondary": [MOUSE_BUTTON_RIGHT],
 		"dash": [KEY_SPACE], "skill_q": [KEY_Q], "skill_e": [KEY_E],
 		"ultimate": [KEY_R], "character": [KEY_TAB], "pause": [KEY_ESCAPE],
 		"interact": [KEY_F]
@@ -37,14 +36,14 @@ func _configure_input() -> void:
 	for action in keys:
 		if not InputMap.has_action(action): InputMap.add_action(action, 0.2)
 		for code in keys[action]:
-			var event: InputEvent
-			if code is Key:
-				event = InputEventKey.new()
-				event.physical_keycode = code
-			else:
-				event = InputEventMouseButton.new()
-				event.button_index = code
+			var event := InputEventKey.new()
+			event.physical_keycode = code
 			if not InputMap.action_has_event(action, event): InputMap.action_add_event(action, event)
+	for action in ["attack", "secondary"]:
+		if not InputMap.has_action(action): InputMap.add_action(action, 0.2)
+		var mouse_event := InputEventMouseButton.new()
+		mouse_event.button_index = MOUSE_BUTTON_LEFT if action == "attack" else MOUSE_BUTTON_RIGHT
+		InputMap.action_add_event(action, mouse_event)
 	var joypad := {
 		"attack": JOY_BUTTON_RIGHT_SHOULDER, "secondary": JOY_BUTTON_LEFT_SHOULDER,
 		"dash": JOY_BUTTON_A, "skill_q": JOY_BUTTON_X, "skill_e": JOY_BUTTON_Y,
