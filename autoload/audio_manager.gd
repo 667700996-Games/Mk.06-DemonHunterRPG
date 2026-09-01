@@ -11,7 +11,7 @@ var music_mood := ""
 var disabled := false
 
 func _ready() -> void:
-	if "--stress-test" in OS.get_cmdline_user_args():
+	if "--stress-test" in OS.get_cmdline_user_args() or "--loot-stress-test" in OS.get_cmdline_user_args():
 		disabled = true
 		return
 	for index in POOL_SIZE:

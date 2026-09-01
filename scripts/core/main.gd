@@ -25,6 +25,10 @@ func _ready() -> void:
 		var stress_test: Node = load("res://tests/performance_test.gd").new()
 		add_child(stress_test)
 		return
+	if "--loot-stress-test" in OS.get_cmdline_user_args():
+		var loot_stress_test: Node = load("res://tests/loot_performance_test.gd").new()
+		add_child(loot_stress_test)
+		return
 	if "--capture-run" in OS.get_cmdline_user_args():
 		_start_run(1, "graveyard")
 		call_deferred("_prepare_capture_run")

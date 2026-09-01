@@ -16,6 +16,7 @@ const HUDScript = preload("res://scripts/ui/hud.gd")
 const DebugMenuScript = preload("res://scripts/ui/debug_menu.gd")
 const SummonScript = preload("res://scripts/entities/summon.gd")
 const AmbientMotesScript = preload("res://scripts/effects/ambient_motes.gd")
+const MAX_GROUND_ITEMS := 96
 
 var world: Node2D
 var player: RiftPlayer
@@ -29,6 +30,7 @@ var biome: Dictionary
 var enemy_pool: Array[RiftEnemy] = []
 var projectile_pool: Array[RiftProjectile] = []
 var pickup_pool: Array[RiftPickup] = []
+var available_pickups: Array[RiftPickup] = []
 var burst_pool: Array[ImpactBurst] = []
 var number_pool: Array[DamageNumber] = []
 var zone_pool: Array[DangerZone] = []
@@ -71,6 +73,9 @@ var recent_hits: Array[float] = []
 var banished_upgrade_ids: Array[String] = []
 var locked_upgrade_ids: Array[String] = []
 var favored_upgrade_tag := ""
+var ground_item_count := 0
+var last_loot_feedback_msec := -10000
+var last_loot_feedback_rarity := -1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -123,7 +128,7 @@ func _build_scene() -> void:
 func _build_pools() -> void:
 	for index in 180: _create_enemy()
 	for index in 180: _create_projectile()
-	for index in 150: _create_pickup()
+	for index in 150: _create_pickup(true)
 	for index in 56: _create_burst()
 	for index in 72: _create_number()
 	for index in 32: _create_zone()
@@ -275,11 +280,15 @@ func _simulate_projectiles(delta: float) -> void:
 
 func _simulate_pickups(delta: float) -> void:
 	var radius := 115.0 + Game.stat_total("pickup_radius")
-	for pickup in pickups.duplicate():
+	var still_active: Array[RiftPickup] = []
+	for pickup in pickups:
 		if not pickup.active:
-			pickups.erase(pickup)
+			available_pickups.append(pickup)
 			continue
 		pickup.simulate(delta, player.global_position, radius)
+		if pickup.active: still_active.append(pickup)
+		else: available_pickups.append(pickup)
+	pickups = still_active
 
 func _simulate_summons(delta: float) -> void:
 	summon_refresh_timer -= delta
@@ -688,21 +697,35 @@ func _on_pickup_collected(pickup: RiftPickup) -> void:
 		"gold": Game.current_run.gold += int(pickup.value)
 		"item":
 			var item := pickup.item.duplicate(true)
-			var equipped := _equipped_for_item(item)
-			var kept := Game.register_item(item)
-			if kept:
-				latest_item = item
-				hud.show_loot(item, equipped)
-			else:
-				latest_item = {}
-				hud.announce("AUTO-SALVAGED  •  %s" % item.rarity.to_upper(), item.color, 0.55)
-			AudioManager.play_sfx("legendary" if item.rarity_index >= 4 else "loot", 1.35 if item.rarity_index == 5 else 1.0, 1.0 if item.rarity_index == 5 else (-2.0 if item.rarity_index >= 4 else -7.0))
-			if item.rarity_index >= 4:
-				_flash(item.color, 0.48 if item.rarity_index == 5 else 0.26)
-				if item.rarity_index == 5: _shake(10.0)
-				hud.announce("%s DROP  •  %s" % [item.rarity.to_upper(), item.name.to_upper()], item.color, 1.1)
+			ground_item_count = maxi(0, ground_item_count - 1)
+			_collect_item(item)
 	pickup.deactivate()
-	pickups.erase(pickup)
+
+func _collect_item(item: Dictionary) -> void:
+	var equipped := _equipped_for_item(item)
+	var kept := Game.register_item(item)
+	var feedback := _allow_loot_feedback(int(item.get("rarity_index", 0)))
+	if kept:
+		latest_item = item
+		if feedback: hud.show_loot(item, equipped)
+	else:
+		latest_item = {}
+		if feedback: hud.announce("AUTO-SALVAGED  •  %s" % item.rarity.to_upper(), item.color, 0.55)
+	if not feedback: return
+	AudioManager.play_sfx("legendary" if item.rarity_index >= 4 else "loot", 1.35 if item.rarity_index == 5 else 1.0, 1.0 if item.rarity_index == 5 else (-2.0 if item.rarity_index >= 4 else -7.0))
+	if item.rarity_index >= 4:
+		_flash(item.color, 0.48 if item.rarity_index == 5 else 0.26)
+		if item.rarity_index == 5: _shake(10.0)
+		hud.announce("%s DROP  •  %s" % [item.rarity.to_upper(), item.name.to_upper()], item.color, 1.1)
+
+func _allow_loot_feedback(rarity_index: int) -> bool:
+	var now := Time.get_ticks_msec()
+	var minimum_gap := 35 if rarity_index >= 4 else 90
+	if now - last_loot_feedback_msec < minimum_gap and rarity_index <= last_loot_feedback_rarity:
+		return false
+	last_loot_feedback_msec = now
+	last_loot_feedback_rarity = rarity_index
+	return true
 
 func _add_xp(amount: float) -> void:
 	Game.current_run.xp += amount * (1.0 + Game.stat_total("xp_gain") / 100.0)
@@ -917,10 +940,16 @@ func _drop_item(origin: Vector2, force_high: bool) -> void:
 	if force_high and item.rarity_index < 2:
 		# Elite/boss loot has a floor while remaining random above it.
 		item = DataRegistry.roll_item(Game.current_run.level + Game.current_run.tier * 2, Game.current_run.tier + 18, favored)
+	# Pathological drop storms are recovered directly into the bounded inventory;
+	# normal play still leaves a generous number of physical drops on the ground.
+	if ground_item_count >= MAX_GROUND_ITEMS:
+		_collect_item(item)
+		return
 	var pickup := _take_pickup()
 	pickup.z_index = 5
 	pickup.activate_item(origin, item)
 	pickups.append(pickup)
+	ground_item_count += 1
 
 func _spawn_zone(origin: Vector2, radius: float, damage: float, delay: float, element: String) -> DangerZone:
 	var zone := _take_zone()
@@ -1034,17 +1063,17 @@ func _create_projectile() -> RiftProjectile:
 	return projectile
 
 func _take_pickup() -> RiftPickup:
-	for pickup in pickup_pool:
-		if not pickup.active: return pickup
-	return _create_pickup()
+	if not available_pickups.is_empty(): return available_pickups.pop_back()
+	return _create_pickup(false)
 
-func _create_pickup() -> RiftPickup:
+func _create_pickup(mark_available := true) -> RiftPickup:
 	var pickup := PickupScript.new()
 	pickup.visible = false
 	pickup.z_index = 3
 	add_child(pickup)
 	pickup.collected.connect(_on_pickup_collected)
 	pickup_pool.append(pickup)
+	if mark_available: available_pickups.append(pickup)
 	return pickup
 
 func _take_burst() -> ImpactBurst:

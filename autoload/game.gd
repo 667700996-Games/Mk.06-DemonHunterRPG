@@ -8,6 +8,7 @@ signal inventory_changed
 
 const SAVE_VERSION := 1
 const SLOTS := ["weapon", "head", "chest", "gloves", "boots", "amulet", "ring_1", "ring_2"]
+const INVENTORY_CAP := 80
 
 var settings := {
 	"fullscreen": false, "resolution": "1920x1080", "vsync": true, "fps_limit": 120, "master_volume": 0.8,
@@ -39,6 +40,7 @@ func hydrate(data: Dictionary) -> void:
 	_merge_known(statistics, data.get("statistics", {}))
 	inventory.assign(data.get("inventory", []))
 	for index in inventory.size(): inventory[index] = _normalize_item(inventory[index])
+	_enforce_inventory_cap()
 	var saved_equipment: Dictionary = data.get("equipment", {})
 	for slot in SLOTS: equipment[slot] = _normalize_item(saved_equipment.get(slot, {}))
 	apply_settings()
@@ -104,13 +106,13 @@ func register_item(item: Dictionary) -> bool:
 		meta.pity += 1
 	var salvage_key := "auto_salvage_" + rarity.to_lower()
 	if settings.get(salvage_key, false) and rarity in ["Common", "Magic", "Rare"]:
-		meta.currency += maxi(1, int(item.get("item_level", 1) * (item.get("rarity_index", 0) + 1) * 0.6))
+		meta.currency += _salvage_value(item, 0.6)
 		inventory_changed.emit()
 		return false
 	inventory.push_front(item)
-	if inventory.size() > 80: auto_salvage()
+	var kept := _enforce_inventory_cap(item.get("uid", ""))
 	inventory_changed.emit()
-	return true
+	return kept
 
 func equip_item(item: Dictionary) -> void:
 	var slot: String = item.get("slot", "weapon")
@@ -124,7 +126,7 @@ func equip_item(item: Dictionary) -> void:
 
 func salvage_item(item: Dictionary) -> int:
 	if item.get("favorite", false): return 0
-	var value := int(item.get("item_level", 1) * (item.get("rarity_index", 0) + 1) * 0.8) + 1
+	var value := _salvage_value(item, 0.8)
 	meta.currency += value
 	_remove_inventory_uid(item.get("uid", ""))
 	inventory_changed.emit()
@@ -134,8 +136,39 @@ func auto_salvage() -> void:
 	var keep: Array[Dictionary] = []
 	for item in inventory:
 		if item.get("favorite", false) or item.get("rarity_index", 0) >= 2: keep.append(item)
-		else: meta.currency += maxi(1, int(item.get("item_level", 1) * 0.5))
+		else: meta.currency += _salvage_value(item, 0.5)
 	inventory = keep
+	inventory_changed.emit()
+
+func _salvage_value(item: Dictionary, multiplier: float) -> int:
+	return maxi(1, int(item.get("item_level", 1) * (item.get("rarity_index", 0) + 1) * multiplier) + 1)
+
+func _enforce_inventory_cap(tracked_uid := "") -> bool:
+	if inventory.size() <= INVENTORY_CAP: return true
+	# The old cap only removed Common/Magic items, so Rare+ inventories could grow
+	# without bound. Rank once, keep the strongest/favorited items, then rebuild in
+	# the original recent-first order. This is O(n log n), including old oversized saves.
+	var ranked: Array[Dictionary] = []
+	var tags := build_tags()
+	for index in inventory.size():
+		var candidate: Dictionary = inventory[index]
+		var priority := float(candidate.get("rarity_index", 0)) * 1000000.0 + item_score(candidate, tags)
+		if candidate.get("favorite", false): priority += 1000000000.0
+		ranked.append({"index": index, "priority": priority})
+	ranked.sort_custom(func(a: Dictionary, b: Dictionary): return a.priority > b.priority)
+	var keep_indices := {}
+	for index in mini(INVENTORY_CAP, ranked.size()): keep_indices[ranked[index].index] = true
+	var trimmed: Array[Dictionary] = []
+	var tracked_kept := tracked_uid.is_empty()
+	for index in inventory.size():
+		var candidate: Dictionary = inventory[index]
+		if keep_indices.has(index):
+			trimmed.append(candidate)
+			if candidate.get("uid", "") == tracked_uid: tracked_kept = true
+		else:
+			meta.currency += _salvage_value(candidate, 0.6)
+	inventory = trimmed
+	return tracked_kept
 
 func _remove_inventory_uid(uid: String) -> void:
 	for index in range(inventory.size() - 1, -1, -1):

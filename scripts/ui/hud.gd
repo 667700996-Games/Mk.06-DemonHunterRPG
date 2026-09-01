@@ -33,6 +33,7 @@ var latest_item: Dictionary = {}
 var fps_label: Label
 var inventory_filter := "ALL"
 var inventory_sort := "BUILD SCORE"
+const MAX_LOOT_TOASTS := 4
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -243,6 +244,12 @@ func announce(text: String, color := Color.WHITE, seconds := 1.5) -> void:
 
 func show_loot(item: Dictionary, equipped: Dictionary) -> void:
 	latest_item = item
+	# queue_free() is deferred. Calling it in a child-count while loop leaves the
+	# count unchanged until frame end and used to lock the CPU on the fifth pickup.
+	while toast_layer.get_child_count() >= MAX_LOOT_TOASTS:
+		var oldest := toast_layer.get_child(0)
+		toast_layer.remove_child(oldest)
+		oldest.queue_free()
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(410, 154)
 	var color: Color = item.get("color", Color.WHITE)
@@ -263,7 +270,6 @@ func show_loot(item: Dictionary, equipped: Dictionary) -> void:
 	box.add_child(UIFactory.label("DMG %+.0f  •  TOUGH %+.0f  •  SYNERGY %+.0f  •  F EQUIP" % [difference, toughness, synergy], 14, compare_color))
 	panel.add_child(box)
 	toast_layer.add_child(panel)
-	while toast_layer.get_child_count() > 4: toast_layer.get_child(0).queue_free()
 	var tween := panel.create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	panel.modulate.a = 0.0
