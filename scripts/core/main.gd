@@ -40,8 +40,17 @@ func _ready() -> void:
 
 func _prepare_capture_run() -> void:
 	if is_instance_valid(active_arena):
-		active_arena._debug_command("stress")
-		Game.current_run.elapsed = 105.0
+		if "--late-horde" in OS.get_cmdline_user_args():
+			Game.current_run.elapsed = 850.0
+			active_arena.rift_progress = active_arena.rift_goal * 0.97
+			active_arena.god_mode = true
+			var target: int = active_arena._spawn_target(Game.current_run.elapsed)
+			while active_arena.enemies.size() < target:
+				var enemy = active_arena._spawn_enemy(active_arena.enemies.size() % 40 == 0)
+				enemy.global_position = active_arena.player.global_position + Vector2.from_angle(randf() * TAU) * sqrt(randf()) * 880.0
+		else:
+			active_arena._debug_command("stress")
+			Game.current_run.elapsed = 105.0
 		if "--inventory" in OS.get_cmdline_user_args():
 			for index in 16:
 				var item := DataRegistry.roll_item(12 + index, 8 + index % 5, ["lightning", "critical", "projectile"])
@@ -460,7 +469,7 @@ func show_settings() -> void:
 	right.custom_minimum_size.x = 610
 	right.add_theme_constant_override("separation", 10)
 	right.add_child(UIFactory.heading("AUDIO & ACCESSIBILITY", 24, UIFactory.CYAN))
-	_add_toggle(right, "AUTO POTION  •  HP ≤ 35%", "auto_potion")
+	_add_toggle(right, "AUTO POTION  •  HP ≤ 35%  •  BARRIER INDEPENDENT", "auto_potion")
 	_add_toggle(right, "AUTO BARRIER  •  LOW / EMPTY", "auto_barrier")
 	_add_slider(right, "MASTER VOLUME", "master_volume", 0.0, 1.0, 0.05)
 	_add_slider(right, "MUSIC VOLUME", "music_volume", 0.0, 1.0, 0.05)

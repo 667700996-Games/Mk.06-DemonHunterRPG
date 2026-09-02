@@ -25,6 +25,7 @@ var boss_bar: ProgressBar
 var boss_name: Label
 var boss_phase: Label
 var skill_fills: Dictionary = {}
+var skill_titles: Dictionary = {}
 var toast_layer: VBoxContainer
 var announcement: Label
 var announcement_tween: Tween
@@ -33,7 +34,9 @@ var latest_item: Dictionary = {}
 var fps_label: Label
 var inventory_filter := "ALL"
 var inventory_sort := "BUILD SCORE"
-const MAX_LOOT_TOASTS := 4
+const MAX_LOOT_TOASTS := 3
+const OFFENSE_STATS := ["damage", "all_damage", "attack_speed", "crit_chance", "crit_damage", "projectiles", "penetration", "ricochet", "chain", "area", "lucky_hit", "execute", "explosion_damage", "fire_damage", "ice_damage", "lightning_damage", "poison_damage", "bleed_damage", "elemental_damage", "melee_damage", "projectile_damage", "summon_damage", "boss_damage", "elite_damage"]
+const TOUGHNESS_STATS := ["max_health", "barrier", "damage_reduction", "barrier_regen", "life_steal", "potion_power"]
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -152,15 +155,16 @@ func _build_hud() -> void:
 	for skill in skills:
 		var cell := _skill_cell(skill[1], skill[2], skill[3])
 		skill_fills[skill[0]] = cell.get_meta("fill")
+		skill_titles[skill[0]] = cell.get_meta("title")
 		bottom.add_child(cell)
 	root.add_child(bottom)
 
 	toast_layer = VBoxContainer.new()
-	toast_layer.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-	toast_layer.position = Vector2(-430, -120)
-	toast_layer.custom_minimum_size = Vector2(395, 480)
+	toast_layer.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	toast_layer.position = Vector2(-400, -460)
+	toast_layer.custom_minimum_size = Vector2(380, 320)
 	toast_layer.alignment = BoxContainer.ALIGNMENT_END
-	toast_layer.add_theme_constant_override("separation", 8)
+	toast_layer.add_theme_constant_override("separation", 6)
 	root.add_child(toast_layer)
 
 	announcement = UIFactory.heading("", 54, Color.WHITE)
@@ -185,7 +189,8 @@ func _skill_cell(key: String, title: String, color: Color) -> PanelContainer:
 	var stack := VBoxContainer.new()
 	var key_label := UIFactory.label(key, 15, color, HORIZONTAL_ALIGNMENT_CENTER)
 	stack.add_child(key_label)
-	stack.add_child(UIFactory.label(title, 17, UIFactory.TEXT, HORIZONTAL_ALIGNMENT_CENTER))
+	var title_label := UIFactory.label(title, 17, UIFactory.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
+	stack.add_child(title_label)
 	var fill := ProgressBar.new()
 	fill.show_percentage = false
 	fill.max_value = 1.0
@@ -195,6 +200,7 @@ func _skill_cell(key: String, title: String, color: Color) -> PanelContainer:
 	stack.add_child(fill)
 	panel.add_child(stack)
 	panel.set_meta("fill", fill)
+	panel.set_meta("title", title_label)
 	return panel
 
 func update_hud(player: RiftPlayer, rift_progress: float, rift_goal: float, boss: RiftEnemy = null, danger_info := "", buffs: Dictionary = {}) -> void:
@@ -218,6 +224,8 @@ func update_hud(player: RiftPlayer, rift_progress: float, rift_goal: float, boss
 	fps_label.text = UIFactory.format("%d FPS  •  %s NODES", [Engine.get_frames_per_second(), _compact(get_tree().get_node_count())])
 	var cooldowns := player.cooldown_ratios()
 	for key in skill_fills: skill_fills[key].value = cooldowns.get(key, 1.0)
+	var potion_title: Label = skill_titles.get("potion") as Label
+	if is_instance_valid(potion_title): potion_title.text = UIFactory.format("POTION ×%d", [player.potion_charges])
 	if is_instance_valid(boss) and boss.active:
 		boss_panel.visible = true
 		boss_bar.value = maxf(boss.health / boss.max_health, 0.0)
@@ -251,31 +259,37 @@ func show_loot(item: Dictionary, equipped: Dictionary) -> void:
 		toast_layer.remove_child(oldest)
 		oldest.queue_free()
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(410, 154)
+	panel.custom_minimum_size = Vector2(380, 96)
 	var color: Color = item.get("color", Color.WHITE)
-	panel.add_theme_stylebox_override("panel", UIFactory.panel_style(Color(0.035, 0.045, 0.08, 0.96), color, 2 if item.rarity_index < 4 else 4, 7))
+	panel.add_theme_stylebox_override("panel", UIFactory.panel_style(Color(0.035, 0.045, 0.08, 0.94), color, 2 if item.get("rarity_index", 0) < 4 else 3, 6))
 	var box := VBoxContainer.new()
-	box.add_child(UIFactory.label(UIFactory.format("%s  •  ITEM LEVEL %d", [UIFactory.localize(item.rarity), item.item_level]), 15, color))
-	box.add_child(UIFactory.label(Game.localized_item_name(item), 22, UIFactory.TEXT))
-	var option_lines: Array[String] = []
-	for affix in item.get("affixes", []).slice(0, 2): option_lines.append("%s  +%.1f" % [UIFactory.localize(affix.name), affix.value])
-	if not item.get("legendary", {}).is_empty(): option_lines.append("◆ " + UIFactory.localize(item.legendary.description))
-	var options_label := UIFactory.label("\n".join(option_lines), 14, UIFactory.MUTED)
-	options_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	box.add_child(options_label)
+	box.add_theme_constant_override("separation", 2)
+	var name_label := UIFactory.label(Game.localized_item_name(item), 19, UIFactory.TEXT)
+	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	box.add_child(name_label)
+	var summary := "%s  •  %s %d  •  %s  •  %s" % [
+		UIFactory.localize(str(item.get("rarity", "COMMON"))),
+		UIFactory.localize("ITEM LEVEL"),
+		int(item.get("item_level", 1)),
+		Game.localized_item_slot(item),
+		Game.localized_item_type(item)
+	]
+	var summary_label := UIFactory.label(summary, 13, color)
+	summary_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	box.add_child(summary_label)
 	var difference := Game.item_score(item, Game.build_tags()) - Game.item_score(equipped, Game.build_tags())
-	var compare_color := Color("#59e391") if difference >= 0.0 else Color("#f16975")
-	var toughness := _category_score(item, ["max_health", "barrier", "damage_reduction", "barrier_regen"]) - _category_score(equipped, ["max_health", "barrier", "damage_reduction", "barrier_regen"])
-	var synergy := _synergy_score(item, Game.build_tags()) - _synergy_score(equipped, Game.build_tags())
-	box.add_child(UIFactory.label(UIFactory.format("DMG %+.0f  •  TOUGH %+.0f  •  SYNERGY %+.0f  •  F EQUIP", [difference, toughness, synergy]), 14, compare_color))
+	var direction := "▲" if difference > 0.05 else ("▼" if difference < -0.05 else "—")
+	var difference_text := "%+.0f" % difference if absf(difference) > 0.05 else "0"
+	var compare_color := Color("#59e391") if difference > 0.05 else (Color("#f16975") if difference < -0.05 else UIFactory.MUTED)
+	box.add_child(UIFactory.label("%s %s %s  •  F %s" % [UIFactory.localize("SCORE"), direction, difference_text, UIFactory.localize("EQUIP")], 13, compare_color))
 	panel.add_child(box)
 	toast_layer.add_child(panel)
 	var tween := panel.create_tween()
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	panel.modulate.a = 0.0
 	tween.tween_property(panel, "modulate:a", 1.0, 0.18)
-	tween.tween_interval(4.8)
-	tween.tween_property(panel, "modulate:a", 0.0, 0.3)
+	tween.tween_interval(3.2)
+	tween.tween_property(panel, "modulate:a", 0.0, 0.25)
 	tween.tween_callback(panel.queue_free)
 
 func _category_score(item: Dictionary, stats: Array) -> float:
@@ -387,7 +401,7 @@ func show_ingame_settings() -> void:
 	)
 	language_row.add_child(language_select)
 	box.add_child(language_row)
-	for entry in [["AUTO ATTACK", "auto_attack"], ["AUTO POTION  •  HP ≤ 35%", "auto_potion"], ["AUTO BARRIER  •  LOW / EMPTY", "auto_barrier"], ["GAMEPAD VIBRATION", "gamepad_vibration"]]:
+	for entry in [["AUTO ATTACK", "auto_attack"], ["AUTO POTION  •  HP ≤ 35%  •  BARRIER INDEPENDENT", "auto_potion"], ["AUTO BARRIER  •  LOW / EMPTY", "auto_barrier"], ["GAMEPAD VIBRATION", "gamepad_vibration"]]:
 		var row := HBoxContainer.new()
 		var title := UIFactory.label(entry[0], 19, UIFactory.TEXT)
 		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -439,7 +453,8 @@ func show_character() -> void:
 		slot_label.custom_minimum_size.x = 110
 		row_box.add_child(slot_label)
 		var item_color := DataRegistry.rarity_color(item.get("rarity", "Common")) if not item.is_empty() else Color("#65728a")
-		var item_label := UIFactory.label(Game.localized_item_name(item) if not item.is_empty() else "— EMPTY —", 18, item_color)
+		var equipped_text := "%s\n%s" % [Game.localized_item_name(item), Game.localized_item_type(item)] if not item.is_empty() else "— EMPTY —"
+		var item_label := UIFactory.label(equipped_text, 18, item_color)
 		item_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row_box.add_child(item_label)
 		row_box.add_child(UIFactory.label("%.0f" % Game.item_score(item, tags), 18, UIFactory.TEXT, HORIZONTAL_ALIGNMENT_RIGHT))
@@ -489,22 +504,98 @@ func _inventory_row(item: Dictionary, tags: Dictionary) -> PanelContainer:
 	var panel := PanelContainer.new()
 	var color: Color = item.get("color", Color.WHITE)
 	panel.add_theme_stylebox_override("panel", UIFactory.panel_style(Color("#0d1424"), color.darkened(0.3), 2, 6))
-	var row := HBoxContainer.new()
-	var text := UIFactory.label(UIFactory.format("%s\n%s  •  ILVL %d  •  SCORE %.0f", [Game.localized_item_name(item), UIFactory.localize(item.rarity), item.item_level, Game.item_score(item, tags)]), 17, color)
+	var item_box := VBoxContainer.new()
+	item_box.add_theme_constant_override("separation", 8)
+	item_box.add_child(UIFactory.label(Game.localized_item_name(item), 20, color))
+	var details: Array[String] = [UIFactory.format("%s  •  ILVL %d  •  SCORE %.0f", [UIFactory.localize(item.rarity), item.item_level, Game.item_score(item, tags)])]
+	details.append_array(_item_detail_lines(item))
+	var text := UIFactory.label("\n".join(details), 15, UIFactory.MUTED)
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(text)
+	text.custom_minimum_size.x = 480
+	text.custom_minimum_size.y = details.size() * 20
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	item_box.add_child(text)
+	item_box.add_child(_item_comparison_panel(item, tags))
+	var actions := HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_END
+	actions.add_theme_constant_override("separation", 6)
 	var equip := UIFactory.button("EQUIP", Vector2(120, 52))
 	equip.pressed.connect(func(): Game.equip_item(item); show_character())
-	row.add_child(equip)
+	actions.add_child(equip)
 	var favorite := UIFactory.button("★" if item.get("favorite", false) else "☆", Vector2(58, 52))
 	favorite.pressed.connect(func(): item.favorite = not item.get("favorite", false); Game.inventory_changed.emit(); show_character())
-	row.add_child(favorite)
+	actions.add_child(favorite)
 	var salvage := UIFactory.button("SALVAGE", Vector2(140, 52))
 	salvage.disabled = item.get("favorite", false)
 	salvage.pressed.connect(func(): Game.salvage_item(item); show_character())
-	row.add_child(salvage)
-	panel.add_child(row)
+	actions.add_child(salvage)
+	item_box.add_child(actions)
+	panel.add_child(item_box)
 	return panel
+
+func _item_comparison_panel(item: Dictionary, current_tags: Dictionary) -> PanelContainer:
+	var target_slot := Game.equipment_slot_for_item(item)
+	var equipped: Dictionary = Game.equipment.get(target_slot, {})
+	var comparison_tags := _tags_without_item(current_tags, equipped)
+	var candidate_score := Game.item_score(item, comparison_tags)
+	var equipped_score := Game.item_score(equipped, comparison_tags)
+	var metrics := [
+		["SCORE", candidate_score - equipped_score],
+		["OFFENSE", _offense_score(item) - _offense_score(equipped)],
+		["TOUGHNESS", _category_score(item, TOUGHNESS_STATS) - _category_score(equipped, TOUGHNESS_STATS)],
+		["SYNERGY", _synergy_score(item, comparison_tags) - _synergy_score(equipped, comparison_tags)]
+	]
+	var comparison_panel := PanelContainer.new()
+	comparison_panel.add_theme_stylebox_override("panel", UIFactory.panel_style(Color("#0a1120"), Color("#2d4468"), 1, 5))
+	var comparison_box := VBoxContainer.new()
+	comparison_box.add_theme_constant_override("separation", 5)
+	var slot_name := UIFactory.localize(target_slot.replace("_", " ").to_upper())
+	var equipped_name := UIFactory.localize("EMPTY SLOT") if equipped.is_empty() else Game.localized_item_name(equipped)
+	comparison_box.add_child(UIFactory.label(UIFactory.format("COMPARED TO: %s  •  %s", [slot_name, equipped_name]), 14, UIFactory.TEXT))
+	var metric_row := HFlowContainer.new()
+	metric_row.add_theme_constant_override("h_separation", 12)
+	metric_row.add_theme_constant_override("v_separation", 4)
+	for metric in metrics:
+		var value: float = metric[1]
+		var direction := "▲" if value > 0.05 else ("▼" if value < -0.05 else "—")
+		var metric_color := Color("#59e391") if value > 0.05 else (Color("#f16975") if value < -0.05 else UIFactory.MUTED)
+		var metric_label := UIFactory.label("%s %s %+.0f" % [UIFactory.localize(str(metric[0])), direction, value], 14, metric_color)
+		metric_label.custom_minimum_size.x = 108
+		metric_row.add_child(metric_label)
+	comparison_box.add_child(metric_row)
+	comparison_panel.add_child(comparison_box)
+	return comparison_panel
+
+func _tags_without_item(current_tags: Dictionary, item: Dictionary) -> Dictionary:
+	var remaining: Dictionary = current_tags.duplicate()
+	for tag in item.get("tags", []):
+		remaining[tag] = maxi(0, int(remaining.get(tag, 0)) - 1)
+	var legendary: Dictionary = item.get("legendary", {})
+	for tag in legendary.get("tags", []):
+		remaining[tag] = maxi(0, int(remaining.get(tag, 0)) - 2)
+	return remaining
+
+func _offense_score(item: Dictionary) -> float:
+	var score := float(item.get("base_power", 0.0)) if item.get("slot", "") == "weapon" else 0.0
+	return score + _category_score(item, OFFENSE_STATS)
+
+func _item_detail_lines(item: Dictionary, affix_limit := -1, include_usage := true) -> Array[String]:
+	var lines: Array[String] = []
+	lines.append(UIFactory.format("EQUIP SLOT: %s  •  ITEM TYPE: %s", [Game.localized_item_slot(item), Game.localized_item_type(item)]))
+	if include_usage: lines.append(Game.localized_item_usage(item))
+	var tags := Game.localized_item_tags(item)
+	var rating_source := "WEAPON POWER %.1f  •  BUILD TAGS: %s" if item.get("slot", "") == "weapon" else "BASE RATING %.1f  •  BUILD TAGS: %s"
+	lines.append(UIFactory.format(rating_source, [float(item.get("base_power", 0.0)), tags if not tags.is_empty() else UIFactory.localize("NONE")]))
+	var affixes: Array = item.get("affixes", [])
+	var visible_count := affixes.size() if affix_limit < 0 else mini(affix_limit, affixes.size())
+	for index in visible_count: lines.append("• " + Game.localized_affix_description(affixes[index]))
+	if visible_count < affixes.size():
+		lines.append(UIFactory.format("+%d MORE AFFIXES", [affixes.size() - visible_count]))
+	var legendary: Dictionary = item.get("legendary", {})
+	if not legendary.is_empty():
+		lines.append(UIFactory.format("◆ LEGENDARY POWER: %s", [UIFactory.localize(str(legendary.get("description", "")))]))
+	return lines
 
 func _filtered_inventory(tags: Dictionary) -> Array[Dictionary]:
 	var output: Array[Dictionary] = []

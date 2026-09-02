@@ -81,6 +81,23 @@ comparisons are visible in play without a separate tutorial.
 - Greater Rift tiers scale health, damage, density, elite cadence/affix count,
   rewards, XP, and rarity. Ten tiers are exposed initially through progression;
   the internal structure continues beyond Tier 100.
+- Horde density stays restrained through the opening and bends sharply upward
+  between 72–96% rift progress. Finale progress gains are compressed so the
+  roughly 630–700-enemy peak remains on screen before the guardian arrives.
+- Hit-stop restoration is pause-safe: opening a level-up or pause overlay during
+  a critical/elite kill can no longer leave the following combat in slow motion.
+- Pickup notifications stay compact: item name, rarity/level, slot/type, and the
+  equipped-item score delta are shown on three short lines for 3.2 seconds.
+- Inventory loot cards expose usage, base power, build tags, every mechanical
+  affix, legendary-power details, and the full equipment comparison.
+- Inventory loot compares directly against the actual replacement slot with
+  colored score, offense, toughness, and build-synergy gains or losses.
+- Potion charges recover automatically, the HUD shows remaining charges, and
+  auto-potion health checks remain independent of the current barrier amount.
+- Elite and boss health compensates for the hunter's exponential level damage:
+  elites receive a 22x+ tier-scaled endurance layer and bosses receive a
+  10x+ tier-, level-, and elapsed-time-scaled endurance layer. Their existing
+  attack-damage formulas are intentionally unchanged.
 - Smart loot softly favors active build tags. A hidden pity counter improves high
   rarity odds, and comparisons evaluate current tag synergy rather than item level
   alone.

@@ -17,6 +17,15 @@ const DebugMenuScript = preload("res://scripts/ui/debug_menu.gd")
 const SummonScript = preload("res://scripts/entities/summon.gd")
 const AmbientMotesScript = preload("res://scripts/effects/ambient_motes.gd")
 const MAX_GROUND_ITEMS := 96
+const MAX_HORDE_COUNT := 700
+const HORDE_TIME_TO_MAX_PRESSURE := 900.0
+const HORDE_SURGE_START := 0.72
+const HORDE_SURGE_FULL := 0.96
+const HORDE_SURGE_EXPONENT := 1.8
+const HORDE_EARLY_PRESSURE := 0.14
+const HORDE_TIME_PRESSURE := 0.30
+const HORDE_TIME_EXPONENT := 4.0
+const HORDE_FINAL_PROGRESS_MULTIPLIER := 0.14
 
 var world: Node2D
 var player: RiftPlayer
@@ -76,6 +85,7 @@ var favored_upgrade_tag := ""
 var ground_item_count := 0
 var last_loot_feedback_msec := -10000
 var last_loot_feedback_rarity := -1
+var horde_surge_started := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -192,21 +202,75 @@ func _unhandled_input(event: InputEvent) -> void:
 func _spawn_director(delta: float) -> void:
 	if boss_started: return
 	var elapsed: float = Game.current_run.elapsed
-	var tier: int = Game.current_run.tier
-	var target := clampi(int(62.0 + elapsed * 0.7 + tier * 12.0), 70, 700)
+	var gauge_ratio := clampf(rift_progress / maxf(rift_goal, 1.0), 0.0, 1.0)
+	if not horde_surge_started and gauge_ratio >= HORDE_SURGE_START:
+		_begin_horde_surge()
+	var target := _spawn_target(elapsed)
 	var deficit := target - enemies.size()
-	if deficit <= 0: return
-	var rate := minf(64.0, 10.0 + elapsed * 0.045 + tier * 1.8 + deficit * 0.04)
-	spawn_accumulator += rate * delta
-	var budget := mini(12, int(spawn_accumulator))
-	spawn_accumulator -= budget
-	for index in budget:
-		_spawn_enemy(false)
+	if deficit > 0:
+		var rate := _normal_spawn_rate(elapsed, deficit)
+		spawn_accumulator = minf(spawn_accumulator + rate * delta, 48.0)
+		var budget := mini(24, mini(deficit, int(spawn_accumulator)))
+		spawn_accumulator -= budget
+		for index in budget: _spawn_enemy(false)
 	elite_timer -= delta
 	if elite_timer <= 0.0:
-		elite_timer = maxf(8.0, 27.0 - elapsed * 0.015 - tier * 0.6)
-		var pack := 1 + int(tier >= 6)
+		elite_timer = _elite_spawn_interval(elapsed)
+		var pack := _elite_pack_size(elapsed)
 		for index in pack: _spawn_enemy(true)
+
+func _horde_intensity(elapsed: float) -> float:
+	# Keep the opening readable, then bend sharply upward after 72% gauge. Time
+	# still adds pressure to stalled runs, but cannot consume the late-horde reveal.
+	var gauge_ratio := clampf(rift_progress / maxf(rift_goal, 1.0), 0.0, 1.0)
+	var time_ratio := clampf(elapsed / HORDE_TIME_TO_MAX_PRESSURE, 0.0, 1.0)
+	var early_pressure := HORDE_EARLY_PRESSURE * gauge_ratio * gauge_ratio
+	var surge_ratio := clampf((gauge_ratio - HORDE_SURGE_START) / (HORDE_SURGE_FULL - HORDE_SURGE_START), 0.0, 1.0)
+	var surge_pressure := pow(smoothstep(0.0, 1.0, surge_ratio), HORDE_SURGE_EXPONENT)
+	var gauge_pressure := lerpf(early_pressure, 1.0, surge_pressure)
+	var time_pressure := HORDE_TIME_PRESSURE * pow(time_ratio, HORDE_TIME_EXPONENT)
+	return clampf(1.0 - (1.0 - gauge_pressure) * (1.0 - time_pressure), 0.0, 1.0)
+
+func _begin_horde_surge() -> void:
+	horde_surge_started = true
+	spawn_accumulator = maxf(spawn_accumulator, 48.0)
+	AudioManager.play_music("intense")
+	hud.announce("THE HORDE BREAKS THROUGH", Color("#ff416a"), 1.6)
+	_flash(Color("#b02f66"), 0.28)
+	_shake(14.0)
+
+func _rift_progress_gain_multiplier() -> float:
+	# The last stretch deliberately takes more kills. Without this counterweight,
+	# a high-density wave fills the remaining gauge before it can fill the screen.
+	var gauge_ratio := clampf(rift_progress / maxf(rift_goal, 1.0), 0.0, 1.0)
+	var surge_ratio := clampf((gauge_ratio - HORDE_SURGE_START) / (HORDE_SURGE_FULL - HORDE_SURGE_START), 0.0, 1.0)
+	return lerpf(1.0, HORDE_FINAL_PROGRESS_MULTIPLIER, smoothstep(0.0, 1.0, surge_ratio))
+
+func _add_rift_progress(amount: float) -> void:
+	rift_progress = minf(rift_goal, rift_progress + amount * _rift_progress_gain_multiplier())
+
+func _spawn_target(elapsed: float) -> int:
+	var tier := int(Game.current_run.tier)
+	var opening_count := clampi(54 + tier * 7, 60, 125)
+	var final_count := clampi(620 + tier * 10, 630, MAX_HORDE_COUNT)
+	return clampi(int(round(lerpf(opening_count, final_count, _horde_intensity(elapsed)))), opening_count, MAX_HORDE_COUNT)
+
+func _normal_spawn_rate(elapsed: float, deficit: int) -> float:
+	var intensity := _horde_intensity(elapsed)
+	var tier := int(Game.current_run.tier)
+	var base_rate := 8.0 + tier * 1.2
+	var peak_rate := minf(165.0, 118.0 + tier * 4.0)
+	var catchup := maxf(0.0, deficit) * lerpf(0.055, 0.16, intensity)
+	return minf(180.0, lerpf(base_rate, peak_rate, intensity) + catchup)
+
+func _elite_spawn_interval(elapsed: float) -> float:
+	var opening_interval := maxf(18.0, 28.0 - int(Game.current_run.tier) * 0.55)
+	return lerpf(opening_interval, 4.5, _horde_intensity(elapsed))
+
+func _elite_pack_size(elapsed: float) -> int:
+	var intensity := _horde_intensity(elapsed)
+	var tier := int(Game.current_run.tier)
+	return 1 + int(intensity >= 0.42) + int(intensity >= 0.78) + int(tier >= 8 and intensity >= 0.9)
 
 func _spawn_enemy(make_elite: bool, near_position := Vector2.INF, forced_data: Dictionary = {}) -> RiftEnemy:
 	var enemy := _take_enemy()
@@ -638,7 +702,7 @@ func _on_enemy_killed(enemy: RiftEnemy, context: Dictionary) -> void:
 	Game.current_run.kills += 1
 	if was_elite:
 		Game.current_run.elite_kills += 1
-		rift_progress += 38.0 + Game.current_run.tier * 2.0
+		_add_rift_progress(38.0 + Game.current_run.tier * 2.0)
 		Game.meta.pity += 2
 		AudioManager.play_sfx("explode", 0.72, -2.0)
 		_burst(origin, Color("#ffc857"), 3.0, "elite")
@@ -649,7 +713,7 @@ func _on_enemy_killed(enemy: RiftEnemy, context: Dictionary) -> void:
 		for index in 3 + int(randf() < 0.45): _drop_item(origin + Vector2.from_angle(randf() * TAU) * randf_range(24.0, 80.0), index == 0)
 		for index in 6: _spawn_gold(origin, 3 + Game.current_run.tier)
 	else:
-		rift_progress += float(enemy.data.get("progress", 2.0))
+		_add_rift_progress(float(enemy.data.get("progress", 2.0)))
 	player.register_kill()
 	kill_xp_bank += 1.0 + Game.current_run.tier * 0.08
 	if Game.current_run.kills % 3 == 0:
@@ -740,6 +804,9 @@ func _add_xp(amount: float) -> void:
 	if pending_level_ups > 0 and not hud.has_overlay(): _open_level_up()
 
 func _open_level_up() -> void:
+	# A kill can open this overlay during a hit stop. Restore normal time before
+	# pausing so the hit-stop timer cannot leave the next combat state slowed.
+	_restore_combat_time_scale()
 	get_tree().paused = true
 	current_upgrade_options.clear()
 	var candidates := DataRegistry.upgrades.duplicate()
@@ -875,6 +942,7 @@ func _abandon_run() -> void:
 	end_run(false, 0.0)
 
 func _resume_game() -> void:
+	_restore_combat_time_scale()
 	get_tree().paused = false
 
 func get_nearest_enemy(origin: Vector2) -> RiftEnemy:
@@ -992,8 +1060,13 @@ func _hit_stop(seconds: float) -> void:
 	if ending or get_tree().paused or Engine.time_scale < 0.9: return
 	Engine.time_scale = 0.16
 	get_tree().create_timer(seconds, true, false, true).timeout.connect(func():
-		if not ending and not get_tree().paused: Engine.time_scale = 1.0
+		# The timer deliberately runs while paused and ignores time scale. Level-up
+		# or pause overlays must not prevent the one-shot restoration from happening.
+		_restore_combat_time_scale()
 	)
+
+func _restore_combat_time_scale() -> void:
+	if not ending: Engine.time_scale = 1.0
 
 func _update_camera(delta: float) -> void:
 	if not is_instance_valid(camera): return
@@ -1009,12 +1082,7 @@ func _update_camera(delta: float) -> void:
 	else: camera.zoom = camera.zoom.lerp(Vector2.ONE, minf(1.0, delta * 8.0))
 
 func _equipped_for_item(item: Dictionary) -> Dictionary:
-	var slot: String = item.slot
-	if slot == "ring":
-		var one: Dictionary = Game.equipment.ring_1
-		var two: Dictionary = Game.equipment.ring_2
-		return one if Game.item_score(one) < Game.item_score(two) else two
-	return Game.equipment.get(slot, {})
+	return Game.equipped_item_for(item)
 
 func _tag_element(tag: String) -> String:
 	return tag if tag in RiftEnemy.ELEMENT_COLORS else "void"

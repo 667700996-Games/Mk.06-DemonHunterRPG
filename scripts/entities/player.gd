@@ -7,6 +7,11 @@ signal died
 signal health_changed
 signal dash_started
 
+const MAX_POTION_CHARGES := 3
+const POTION_COOLDOWN := 18.0
+const POTION_RECHARGE_TIME := 30.0
+const AUTO_POTION_HEALTH_RATIO := 0.35
+
 var arena: Node
 var max_health := 140.0
 var health := 140.0
@@ -30,8 +35,9 @@ var velocity := Vector2.ZERO
 var walk_phase := 0.0
 var flash := 0.0
 var dead := false
-var potion_charges := 3
+var potion_charges := MAX_POTION_CHARGES
 var potion_timer := 0.0
+var potion_recharge_timer := 0.0
 var manual_attack_toggled := false
 
 func setup(owner_arena: Node) -> void:
@@ -40,6 +46,9 @@ func setup(owner_arena: Node) -> void:
 	max_barrier = Game.stat_total("barrier")
 	health = max_health
 	barrier = max_barrier
+	potion_charges = MAX_POTION_CHARGES
+	potion_timer = 0.0
+	potion_recharge_timer = 0.0
 	move_speed = 330.0 * (1.0 + Game.stat_total("move_speed") / 100.0)
 	dash_cooldown = 1.25 * (1.0 - minf(Game.stat_total("dash_cooldown") / 100.0, 0.65))
 	queue_redraw()
@@ -51,7 +60,8 @@ func _process(delta: float) -> void:
 	secondary_timer -= delta
 	q_timer -= delta
 	e_timer -= delta
-	potion_timer -= delta
+	potion_timer = maxf(0.0, potion_timer - delta)
+	_tick_potion_recharge(delta)
 	dash_ready -= delta
 	flash = maxf(0.0, flash - delta * 7.0)
 	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -95,10 +105,25 @@ func _process(delta: float) -> void:
 		ultimate_charge = 0.0
 		ability_requested.emit("ultimate", global_position, facing)
 	var manual_potion := Input.is_action_just_pressed("potion")
-	var automatic_potion: bool = bool(Game.settings.auto_potion) and health / maxf(max_health, 1.0) <= 0.35
-	if (manual_potion or automatic_potion) and potion_charges > 0 and potion_timer <= 0.0 and health < max_health:
-		_use_potion()
+	var automatic_potion: bool = bool(Game.settings.auto_potion) and _should_auto_potion()
+	if manual_potion or automatic_potion: _use_potion()
 	queue_redraw()
+
+func _should_auto_potion() -> bool:
+	# Barrier is deliberately irrelevant: potions restore missing health, even
+	# while a full barrier is preventing additional incoming health damage.
+	return health > 0.0 and health / maxf(max_health, 1.0) <= AUTO_POTION_HEALTH_RATIO
+
+func _tick_potion_recharge(delta: float) -> void:
+	if potion_charges >= MAX_POTION_CHARGES:
+		potion_recharge_timer = 0.0
+		return
+	if potion_recharge_timer <= 0.0: potion_recharge_timer = POTION_RECHARGE_TIME
+	potion_recharge_timer -= delta
+	while potion_recharge_timer <= 0.0 and potion_charges < MAX_POTION_CHARGES:
+		potion_charges += 1
+		if potion_charges < MAX_POTION_CHARGES: potion_recharge_timer += POTION_RECHARGE_TIME
+		else: potion_recharge_timer = 0.0
 
 func _should_auto_barrier(target: Node2D) -> bool:
 	if not is_instance_valid(target): return false
@@ -110,11 +135,15 @@ func _use_barrier() -> void:
 	e_timer = 7.0 * (1.0 - minf(Game.stat_total("cooldown") / 100.0, 0.65))
 	ability_requested.emit("barrier", global_position, facing)
 
-func _use_potion() -> void:
+func _use_potion() -> bool:
+	if dead or potion_charges <= 0 or potion_timer > 0.0 or health >= max_health: return false
 	potion_charges -= 1
-	potion_timer = 18.0
+	potion_timer = POTION_COOLDOWN
+	if potion_recharge_timer <= 0.0: potion_recharge_timer = POTION_RECHARGE_TIME
+	var health_before := health
 	heal(max_health * (0.35 + Game.stat_total("potion_power") / 100.0))
 	ability_requested.emit("potion", global_position, facing)
+	return health > health_before
 
 func fire_attack() -> void:
 	attack_counter += 1
@@ -217,7 +246,7 @@ func cooldown_ratios() -> Dictionary:
 		"secondary": clampf(1.0 - secondary_timer / 3.4, 0.0, 1.0),
 		"q": clampf(1.0 - q_timer / 5.5, 0.0, 1.0),
 		"e": clampf(1.0 - e_timer / 7.0, 0.0, 1.0), "r": ultimate_charge,
-		"potion": clampf(1.0 - potion_timer / 18.0, 0.0, 1.0)
+		"potion": clampf(1.0 - (potion_recharge_timer / POTION_RECHARGE_TIME if potion_charges <= 0 else potion_timer / POTION_COOLDOWN), 0.0, 1.0)
 	}
 
 func _draw() -> void:

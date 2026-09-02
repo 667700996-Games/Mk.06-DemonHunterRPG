@@ -9,6 +9,7 @@ signal inventory_changed
 const SAVE_VERSION := 1
 const SLOTS := ["weapon", "head", "chest", "gloves", "boots", "amulet", "ring_1", "ring_2"]
 const INVENTORY_CAP := 80
+const ARMOR_SLOTS := ["head", "chest", "gloves", "boots"]
 
 var settings := {
 	"language": "ko", "fullscreen": false, "resolution": "1920x1080", "vsync": true, "fps_limit": 120, "master_volume": 0.8,
@@ -63,6 +64,39 @@ func localized_item_name(item: Dictionary) -> String:
 	var affix_name := TranslationServer.translate(str(affixes[0].get("name", "")))
 	if str(settings.get("language", "ko")) == "ko": return "%s %s" % [affix_name, base_name]
 	return str(item.get("name", base_name))
+
+func localized_item_slot(item: Dictionary) -> String:
+	var slot := str(item.get("slot", "weapon")).replace("_", " ").to_upper()
+	return TranslationServer.translate(slot)
+
+func localized_item_type(item: Dictionary) -> String:
+	var slot := str(item.get("slot", "weapon"))
+	var tags: Array = item.get("tags", [])
+	if slot == "weapon":
+		return TranslationServer.translate("MELEE WEAPON" if "melee" in tags else "RANGED WEAPON")
+	if slot in ARMOR_SLOTS: return TranslationServer.translate("ARMOR")
+	return TranslationServer.translate("ACCESSORY")
+
+func localized_item_usage(item: Dictionary) -> String:
+	var slot := str(item.get("slot", "weapon"))
+	var tags: Array = item.get("tags", [])
+	if slot == "weapon" and "melee" in tags:
+		return TranslationServer.translate("Uses a close-range sweeping attack.")
+	if slot == "weapon": return TranslationServer.translate("Fires projectiles at enemies from range.")
+	if slot in ARMOR_SLOTS:
+		return TranslationServer.translate("Provides defensive or build-focused equipment bonuses.")
+	return TranslationServer.translate("Provides specialized build and utility bonuses.")
+
+func localized_item_tags(item: Dictionary) -> String:
+	var translated: Array[String] = []
+	for tag in item.get("tags", []): translated.append(TranslationServer.translate(str(tag)))
+	return " / ".join(translated)
+
+func localized_stat_name(stat_name: String) -> String:
+	return TranslationServer.translate(stat_name.replace("_", " ").to_upper())
+
+func localized_affix_description(affix: Dictionary) -> String:
+	return "%s  •  %s +%.1f" % [TranslationServer.translate(str(affix.get("name", "Unknown"))), localized_stat_name(str(affix.get("stat", ""))), float(affix.get("value", 0.0))]
 
 func _merge_known(target: Dictionary, source: Dictionary) -> void:
 	for key in source:
@@ -127,14 +161,23 @@ func register_item(item: Dictionary) -> bool:
 	return kept
 
 func equip_item(item: Dictionary) -> void:
-	var slot: String = item.get("slot", "weapon")
-	if slot == "ring":
-		slot = "ring_1" if equipment.ring_1.is_empty() else "ring_2"
+	var slot := equipment_slot_for_item(item)
 	var previous: Dictionary = equipment.get(slot, {})
 	equipment[slot] = item
 	_remove_inventory_uid(item.get("uid", ""))
 	if not previous.is_empty(): inventory.push_front(previous)
 	inventory_changed.emit()
+
+func equipment_slot_for_item(item: Dictionary) -> String:
+	var slot := str(item.get("slot", "weapon"))
+	if slot != "ring": return slot
+	if equipment.ring_1.is_empty(): return "ring_1"
+	if equipment.ring_2.is_empty(): return "ring_2"
+	var tags := build_tags()
+	return "ring_1" if item_score(equipment.ring_1, tags) < item_score(equipment.ring_2, tags) else "ring_2"
+
+func equipped_item_for(item: Dictionary) -> Dictionary:
+	return equipment.get(equipment_slot_for_item(item), {})
 
 func salvage_item(item: Dictionary) -> int:
 	if item.get("favorite", false): return 0

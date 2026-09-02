@@ -10,6 +10,12 @@ const ELEMENT_COLORS := {
 	"lightning": Color("#ffe066"), "poison": Color("#7ee34d"), "bleed": Color("#ef476f"),
 	"void": Color("#ad68ff")
 }
+const HUNTER_LEVEL_HEALTH_GROWTH := 1.085
+const ELITE_BASE_HEALTH_MULTIPLIER := 22.0
+const ELITE_TIER_HEALTH_MULTIPLIER := 1.25
+const BOSS_BASE_HEALTH_MULTIPLIER := 10.0
+const BOSS_TIER_HEALTH_MULTIPLIER := 0.8
+const BOSS_MAX_TIME_ENDURANCE := 1.75
 
 var data: Dictionary = {}
 var max_health := 1.0
@@ -57,7 +63,7 @@ func activate(record: Dictionary, spawn_position: Vector2, tier: int, elapsed: f
 	speed = float(data.get("speed", 70.0)) * minf(1.0 + tier * 0.008, 1.35)
 	radius = 21.0 * float(data.get("scale", 1.0))
 	if elite:
-		max_health *= 6.0 + tier * 0.2
+		max_health *= _elite_health_multiplier(tier)
 		contact_damage *= 1.8
 		radius *= 1.35
 		elite_affixes.clear()
@@ -66,7 +72,7 @@ func activate(record: Dictionary, spawn_position: Vector2, tier: int, elapsed: f
 		for index in mini(affix_count, choices.size()): elite_affixes.append(choices[index])
 		if "Berserker" in elite_affixes: speed *= 1.25
 	if boss:
-		max_health = float(data.get("hp", 15000.0)) * tier_scale
+		max_health = float(data.get("hp", 15000.0)) * tier_scale * _boss_health_multiplier(tier, elapsed)
 		contact_damage = float(data.get("damage", 30.0)) * pow(1.1, maxf(0.0, tier - 1.0))
 		speed = 74.0
 		radius = 78.0
@@ -77,6 +83,20 @@ func activate(record: Dictionary, spawn_position: Vector2, tier: int, elapsed: f
 	health = max_health
 	modulate = Color.WHITE
 	queue_redraw()
+
+func _hunter_level_health_scale() -> float:
+	var level := maxi(1, int(Game.current_run.get("level", 1)))
+	return pow(HUNTER_LEVEL_HEALTH_GROWTH, level - 1)
+
+func _elite_health_multiplier(tier: int) -> float:
+	var tier_endurance := ELITE_BASE_HEALTH_MULTIPLIER + tier * ELITE_TIER_HEALTH_MULTIPLIER
+	return tier_endurance * _hunter_level_health_scale()
+
+func _boss_health_multiplier(tier: int, elapsed: float) -> float:
+	var tier_endurance := BOSS_BASE_HEALTH_MULTIPLIER + tier * BOSS_TIER_HEALTH_MULTIPLIER
+	var time_ratio := clampf(elapsed / 900.0, 0.0, 1.0)
+	var time_endurance := lerpf(1.0, BOSS_MAX_TIME_ENDURANCE, time_ratio)
+	return tier_endurance * _hunter_level_health_scale() * time_endurance
 
 func deactivate() -> void:
 	active = false

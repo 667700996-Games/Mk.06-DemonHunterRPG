@@ -220,6 +220,9 @@ msgstr "희귀 자동 분해"
 msgid "AUTO POTION  •  HP ≤ 35%"
 msgstr "자동 물약  •  체력 35% 이하"
 
+msgid "AUTO POTION  •  HP ≤ 35%  •  BARRIER INDEPENDENT"
+msgstr "자동 물약  •  체력 35% 이하  •  베리어 무관"
+
 msgid "AUTO BARRIER  •  LOW / EMPTY"
 msgstr "자동 베리어  •  부족 / 소진"
 
@@ -296,6 +299,9 @@ msgstr "정예 신호 없음"
 msgid "%d FPS  •  %s NODES"
 msgstr "%d FPS  •  노드 %s"
 
+msgid "%s %ds"
+msgstr "%s %d초"
+
 msgid "RIFT GUARDIAN"
 msgstr "균열 수호자"
 
@@ -307,6 +313,9 @@ msgstr "페이즈 %s  •  %s"
 
 msgid "POTION"
 msgstr "물약"
+
+msgid "POTION ×%d"
+msgstr "물약 ×%d"
 
 msgid "NOVA"
 msgstr "노바"
@@ -392,6 +401,33 @@ msgstr "반지 1"
 msgid "RING 2"
 msgstr "반지 2"
 
+msgid "RING"
+msgstr "반지"
+
+msgid "MELEE WEAPON"
+msgstr "근접 무기"
+
+msgid "RANGED WEAPON"
+msgstr "원거리 무기"
+
+msgid "ARMOR"
+msgstr "방어구"
+
+msgid "ACCESSORY"
+msgstr "장신구"
+
+msgid "Uses a close-range sweeping attack."
+msgstr "근거리의 적을 넓게 베는 공격을 사용합니다."
+
+msgid "Fires projectiles at enemies from range."
+msgstr "멀리 있는 적에게 투사체를 발사합니다."
+
+msgid "Provides defensive or build-focused equipment bonuses."
+msgstr "방어 또는 빌드 강화 중심의 장비 효과를 제공합니다."
+
+msgid "Provides specialized build and utility bonuses."
+msgstr "특화 빌드와 유틸리티 효과를 강화합니다."
+
 msgid "— EMPTY —"
 msgstr "— 비어 있음 —"
 
@@ -440,6 +476,45 @@ msgstr "닫기 [TAB]"
 msgid "%s\n%s  •  ILVL %d  •  SCORE %.0f"
 msgstr "%s\n%s  •  아이템 레벨 %d  •  점수 %.0f"
 
+msgid "%s  •  ILVL %d  •  SCORE %.0f"
+msgstr "%s  •  아이템 레벨 %d  •  점수 %.0f"
+
+msgid "EQUIP SLOT: %s  •  ITEM TYPE: %s"
+msgstr "장착 부위: %s  •  장비 유형: %s"
+
+msgid "WEAPON POWER %.1f  •  BUILD TAGS: %s"
+msgstr "무기 공격력 %.1f  •  빌드 태그: %s"
+
+msgid "BASE RATING %.1f  •  BUILD TAGS: %s"
+msgstr "기본 점수 %.1f  •  빌드 태그: %s"
+
+msgid "NONE"
+msgstr "없음"
+
+msgid "+%d MORE AFFIXES"
+msgstr "외 %d개 옵션"
+
+msgid "◆ LEGENDARY POWER: %s"
+msgstr "◆ 전설 효과: %s"
+
+msgid "COMPARED TO: %s  •  %s"
+msgstr "비교 대상: %s  •  %s"
+
+msgid "EMPTY SLOT"
+msgstr "빈 슬롯"
+
+msgid "SCORE"
+msgstr "점수"
+
+msgid "OFFENSE"
+msgstr "공격"
+
+msgid "TOUGHNESS"
+msgstr "방어"
+
+msgid "SYNERGY"
+msgstr "시너지"
+
 msgid "EQUIP"
 msgstr "장착"
 
@@ -449,6 +524,9 @@ msgstr "분해"
 # Combat feedback
 msgid "RIFT OPENED  •  HUNT"
 msgstr "균열 개방  •  사냥 시작"
+
+msgid "THE HORDE BREAKS THROUGH"
+msgstr "괴물의 군세가 밀려옵니다"
 
 msgid "EQUIPPED  •  %s"
 msgstr "장착 완료  •  %s"
@@ -579,6 +657,151 @@ msgstr "공격"
 
 msgid "duration"
 msgstr "지속시간"
+
+# Mechanical stat names used in complete item descriptions
+msgid "ALL DAMAGE"
+msgstr "모든 피해"
+
+msgid "AREA"
+msgstr "범위"
+
+msgid "ATTACK SPEED"
+msgstr "공격 속도"
+
+msgid "BARRIER"
+msgstr "베리어"
+
+msgid "BARRIER REGEN"
+msgstr "베리어 재생"
+
+msgid "BLEED CHANCE"
+msgstr "출혈 확률"
+
+msgid "BLEED DAMAGE"
+msgstr "출혈 피해"
+
+msgid "BOSS DAMAGE"
+msgstr "보스 피해"
+
+msgid "BURN CHANCE"
+msgstr "연소 확률"
+
+msgid "CHAIN"
+msgstr "연쇄 횟수"
+
+msgid "COOLDOWN"
+msgstr "재사용 대기시간 감소"
+
+msgid "CRIT CHANCE"
+msgstr "치명타 확률"
+
+msgid "CRIT DAMAGE"
+msgstr "치명타 피해"
+
+msgid "DAMAGE REDUCTION"
+msgstr "피해 감소"
+
+msgid "DASH COOLDOWN"
+msgstr "회피 재사용 대기시간 감소"
+
+msgid "DURATION"
+msgstr "지속시간"
+
+msgid "ELEMENTAL DAMAGE"
+msgstr "원소 피해"
+
+msgid "ELITE DAMAGE"
+msgstr "정예 피해"
+
+msgid "EXECUTE"
+msgstr "처형"
+
+msgid "EXPLOSION DAMAGE"
+msgstr "폭발 피해"
+
+msgid "FIRE DAMAGE"
+msgstr "화염 피해"
+
+msgid "FREEZE CHANCE"
+msgstr "빙결 확률"
+
+msgid "GOLD FIND"
+msgstr "골드 획득량"
+
+msgid "ICE DAMAGE"
+msgstr "냉기 피해"
+
+msgid "KNOCKBACK"
+msgstr "밀쳐내기"
+
+msgid "LIFE STEAL"
+msgstr "생명력 흡수"
+
+msgid "LIGHTNING DAMAGE"
+msgstr "번개 피해"
+
+msgid "LOW HEALTH DAMAGE"
+msgstr "저체력 피해"
+
+msgid "LUCKY HIT"
+msgstr "행운의 적중 확률"
+
+msgid "MAX HEALTH"
+msgstr "최대 생명력"
+
+msgid "MELEE DAMAGE"
+msgstr "근접 피해"
+
+msgid "MOVE SPEED"
+msgstr "이동 속도"
+
+msgid "ORB VALUE"
+msgstr "구슬 획득량"
+
+msgid "PENETRATION"
+msgstr "관통 횟수"
+
+msgid "PICKUP RADIUS"
+msgstr "획득 반경"
+
+msgid "POISON CHANCE"
+msgstr "중독 확률"
+
+msgid "POISON DAMAGE"
+msgstr "독 피해"
+
+msgid "POTION POWER"
+msgstr "물약 효과"
+
+msgid "PROJECTILE DAMAGE"
+msgstr "투사체 피해"
+
+msgid "PROJECTILE SIZE"
+msgstr "투사체 크기"
+
+msgid "PROJECTILE SPEED"
+msgstr "투사체 속도"
+
+msgid "PROJECTILES"
+msgstr "투사체 수"
+
+msgid "RETALIATE"
+msgstr "반격 피해"
+
+msgid "RICOCHET"
+msgstr "도탄 횟수"
+
+msgid "SKILL ECHO"
+msgstr "스킬 반복"
+
+msgid "SUMMON DAMAGE"
+msgstr "소환수 피해"
+
+msgid "TIME SCALE BONUS"
+msgstr "시간 배율 보너스"
+
+msgid "XP GAIN"
+msgstr "경험치 획득량"
 
 msgid "BOSS"
 msgstr "보스"
@@ -1548,3 +1771,37 @@ msgstr "마지막 일식"
 
 msgid "Near death, time slows while attacks multiply."
 msgstr "죽음에 가까워지면 시간이 느려지고 공격이 증식합니다."
+
+# Debug-build menu
+msgid "DEV HUNT KIT"
+msgstr "개발자 사냥 도구"
+
+msgid "TOGGLE GOD MODE"
+msgstr "무적 모드 전환"
+
+msgid "SPAWN ENEMY"
+msgstr "일반 적 생성"
+
+msgid "SPAWN ELITE"
+msgstr "정예 적 생성"
+
+msgid "SPAWN BOSS"
+msgstr "보스 생성"
+
+msgid "SPAWN ITEM"
+msgstr "아이템 생성"
+
+msgid "ADD XP"
+msgstr "경험치 추가"
+
+msgid "ADD GOLD"
+msgstr "골드 추가"
+
+msgid "TIER +1"
+msgstr "티어 +1"
+
+msgid "KILL ALL"
+msgstr "모두 처치"
+
+msgid "SPAWN 250 STRESS"
+msgstr "적 250 스트레스 생성"
