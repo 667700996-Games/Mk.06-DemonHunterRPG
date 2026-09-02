@@ -96,7 +96,9 @@ func _draw() -> void:
 				draw_rect(Rect2(-14, -height + bob, 28, height), Color(color, 0.07))
 			if show_item_label:
 				var font := ThemeDB.fallback_font
-				draw_string_outline(font, Vector2(-90, 40 + bob), item.get("rarity", "ITEM").to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 180, 13, 4, Color("#080a12"))
-				draw_string(font, Vector2(-90, 40 + bob), item.get("rarity", "ITEM").to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 180, 13, color)
-				draw_string_outline(font, Vector2(-120, 58 + bob), item.get("name", "Unknown"), HORIZONTAL_ALIGNMENT_CENTER, 240, 14, 4, Color("#080a12"))
-				draw_string(font, Vector2(-120, 58 + bob), item.get("name", "Unknown"), HORIZONTAL_ALIGNMENT_CENTER, 240, 14, Color.WHITE)
+				var rarity_text := TranslationServer.translate(str(item.get("rarity", "ITEM")))
+				var name_text := Game.localized_item_name(item)
+				draw_string_outline(font, Vector2(-90, 40 + bob), rarity_text, HORIZONTAL_ALIGNMENT_CENTER, 180, 13, 4, Color("#080a12"))
+				draw_string(font, Vector2(-90, 40 + bob), rarity_text, HORIZONTAL_ALIGNMENT_CENTER, 180, 13, color)
+				draw_string_outline(font, Vector2(-120, 58 + bob), name_text, HORIZONTAL_ALIGNMENT_CENTER, 240, 14, 4, Color("#080a12"))
+				draw_string(font, Vector2(-120, 58 + bob), name_text, HORIZONTAL_ALIGNMENT_CENTER, 240, 14, Color.WHITE)

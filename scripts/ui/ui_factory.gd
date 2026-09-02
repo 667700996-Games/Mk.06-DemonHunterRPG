@@ -15,10 +15,10 @@ static func game_theme() -> Theme:
 	var theme := Theme.new()
 	theme.default_base_scale = float(Game.settings.get("ui_scale", 1.0))
 	var regular := SystemFont.new()
-	regular.font_names = PackedStringArray(["Avenir Next", "Bahnschrift", "Trebuchet MS", "Arial"])
+	regular.font_names = PackedStringArray(["Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", "Avenir Next", "Bahnschrift", "Trebuchet MS", "Arial"])
 	regular.font_weight = 600
 	var heading := SystemFont.new()
-	heading.font_names = PackedStringArray(["Avenir Next Condensed", "Bahnschrift Condensed", "Trebuchet MS"])
+	heading.font_names = PackedStringArray(["Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", "Avenir Next Condensed", "Bahnschrift Condensed", "Trebuchet MS"])
 	heading.font_weight = 800
 	theme.default_font = regular
 	theme.default_font_size = 22
@@ -54,7 +54,7 @@ static func panel_style(fill: Color, border: Color, width := 1, radius := 6) -> 
 
 static func label(text: String, size := 22, color := TEXT, alignment := HORIZONTAL_ALIGNMENT_LEFT) -> Label:
 	var control := Label.new()
-	control.text = text
+	control.text = localize(text)
 	control.add_theme_font_size_override("font_size", size)
 	control.add_theme_color_override("font_color", color)
 	control.horizontal_alignment = alignment
@@ -64,7 +64,7 @@ static func label(text: String, size := 22, color := TEXT, alignment := HORIZONT
 static func heading(text: String, size := 40, color := TEXT) -> Label:
 	var control := label(text, size, color, HORIZONTAL_ALIGNMENT_CENTER)
 	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Avenir Next Condensed", "Bahnschrift Condensed", "Trebuchet MS"])
+	font.font_names = PackedStringArray(["Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", "Avenir Next Condensed", "Bahnschrift Condensed", "Trebuchet MS"])
 	font.font_weight = 900
 	control.add_theme_font_override("font", font)
 	control.add_theme_constant_override("outline_size", maxi(2, int(size / 14.0)))
@@ -73,12 +73,18 @@ static func heading(text: String, size := 40, color := TEXT) -> Label:
 
 static func button(text: String, min_size := Vector2(330, 58)) -> Button:
 	var control := Button.new()
-	control.text = text
+	control.text = localize(text)
 	control.custom_minimum_size = min_size
 	control.focus_mode = Control.FOCUS_ALL
 	control.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	control.mouse_entered.connect(func(): AudioManager.play_sfx("ui", 1.25, -8.0))
 	return control
+
+static func localize(source: String) -> String:
+	return TranslationServer.translate(source)
+
+static func format(source: String, values: Array) -> String:
+	return localize(source) % values
 
 static func spacer(height: float) -> Control:
 	var control := Control.new()

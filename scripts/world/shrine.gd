@@ -50,5 +50,6 @@ func _draw() -> void:
 		draw_arc(Vector2(0, -20), 34.0 + pulse * 5.0, age, age + 4.8, 20, Color(color, pulse), 4.0)
 	if nearby:
 		var font := ThemeDB.fallback_font
-		draw_string_outline(font, Vector2(-120, -88), "F — INVOKE %s" % shrine_type.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 240, 18, 5, Color("#090a14"))
-		draw_string(font, Vector2(-120, -88), "F — INVOKE %s" % shrine_type.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 240, 18, color)
+		var prompt := TranslationServer.translate("F — INVOKE %s") % TranslationServer.translate(shrine_type)
+		draw_string_outline(font, Vector2(-120, -88), prompt, HORIZONTAL_ALIGNMENT_CENTER, 240, 18, 5, Color("#090a14"))
+		draw_string(font, Vector2(-120, -88), prompt, HORIZONTAL_ALIGNMENT_CENTER, 240, 18, color)

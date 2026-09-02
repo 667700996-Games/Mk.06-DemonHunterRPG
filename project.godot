@@ -44,6 +44,11 @@ default_bus_layout="res://default_bus_layout.tres"
 
 common/physics_ticks_per_second=60
 
+[internationalization]
+
+locale/fallback="en"
+locale/translations=PackedStringArray("res://localization/ko.po")
+
 [layer_names]
 
 2d_physics/layer_1="Player"

@@ -204,25 +204,25 @@ func update_hud(player: RiftPlayer, rift_progress: float, rift_goal: float, boss
 	barrier_bar.max_value = maxf(player.max_barrier, 1.0)
 	barrier_bar.value = player.barrier
 	barrier_bar.visible = player.max_barrier > 0.0 or player.barrier > 0.0
-	level_text.text = "LV %d" % Game.current_run.level
+	level_text.text = UIFactory.format("LV %d", [Game.current_run.level])
 	var needed := xp_needed(Game.current_run.level)
 	xp_bar.value = Game.current_run.xp / maxf(needed, 1.0)
 	rift_bar.value = clampf(rift_progress / maxf(rift_goal, 1.0), 0.0, 1.0)
 	timer_text.text = "%02d:%02d" % [int(Game.current_run.elapsed) / 60, int(Game.current_run.elapsed) % 60]
-	tier_text.text = "TIER %02d" % Game.current_run.tier
-	kill_text.text = "%s KILLS  •  %s ELITES  •  %dG" % [_compact(Game.current_run.kills), Game.current_run.elite_kills, Game.current_run.gold]
-	danger_text.text = danger_info if not danger_info.is_empty() else "NO ELITE SIGNAL"
+	tier_text.text = UIFactory.format("TIER %02d", [Game.current_run.tier])
+	kill_text.text = UIFactory.format("%s KILLS  •  %s ELITES  •  %dG", [_compact(Game.current_run.kills), Game.current_run.elite_kills, Game.current_run.gold])
+	danger_text.text = danger_info if not danger_info.is_empty() else UIFactory.localize("NO ELITE SIGNAL")
 	var buff_lines: Array[String] = []
-	for key in buffs: buff_lines.append("%s %ds" % [str(key).to_upper(), int(buffs[key])])
+	for key in buffs: buff_lines.append(UIFactory.format("%s %ds", [UIFactory.localize(str(key)), int(buffs[key])]))
 	buff_text.text = "  •  ".join(buff_lines)
-	fps_label.text = "%d FPS  •  %s NODES" % [Engine.get_frames_per_second(), _compact(get_tree().get_node_count())]
+	fps_label.text = UIFactory.format("%d FPS  •  %s NODES", [Engine.get_frames_per_second(), _compact(get_tree().get_node_count())])
 	var cooldowns := player.cooldown_ratios()
 	for key in skill_fills: skill_fills[key].value = cooldowns.get(key, 1.0)
 	if is_instance_valid(boss) and boss.active:
 		boss_panel.visible = true
 		boss_bar.value = maxf(boss.health / boss.max_health, 0.0)
-		boss_name.text = boss.data.get("name", "RIFT GUARDIAN").to_upper()
-		boss_phase.text = "PHASE %s  •  %s" % [_roman(maxi(1, boss.phase)), boss.boss_modifier.to_upper()]
+		boss_name.text = UIFactory.localize(boss.data.get("name", "RIFT GUARDIAN"))
+		boss_phase.text = UIFactory.format("PHASE %s  •  %s", [_roman(maxi(1, boss.phase)), UIFactory.localize(boss.boss_modifier)])
 	else:
 		boss_panel.visible = false
 
@@ -231,7 +231,7 @@ func xp_needed(level: int) -> float:
 
 func announce(text: String, color := Color.WHITE, seconds := 1.5) -> void:
 	if is_instance_valid(announcement_tween): announcement_tween.kill()
-	announcement.text = text
+	announcement.text = UIFactory.localize(text)
 	announcement.add_theme_color_override("font_color", color)
 	announcement.scale = Vector2(1.18, 1.18)
 	announcement.modulate.a = 0.0
@@ -255,11 +255,11 @@ func show_loot(item: Dictionary, equipped: Dictionary) -> void:
 	var color: Color = item.get("color", Color.WHITE)
 	panel.add_theme_stylebox_override("panel", UIFactory.panel_style(Color(0.035, 0.045, 0.08, 0.96), color, 2 if item.rarity_index < 4 else 4, 7))
 	var box := VBoxContainer.new()
-	box.add_child(UIFactory.label("%s  •  ITEM LEVEL %d" % [item.rarity.to_upper(), item.item_level], 15, color))
-	box.add_child(UIFactory.label(item.name, 22, UIFactory.TEXT))
+	box.add_child(UIFactory.label(UIFactory.format("%s  •  ITEM LEVEL %d", [UIFactory.localize(item.rarity), item.item_level]), 15, color))
+	box.add_child(UIFactory.label(Game.localized_item_name(item), 22, UIFactory.TEXT))
 	var option_lines: Array[String] = []
-	for affix in item.get("affixes", []).slice(0, 2): option_lines.append("%s  +%.1f" % [affix.name, affix.value])
-	if not item.get("legendary", {}).is_empty(): option_lines.append("◆ " + item.legendary.description)
+	for affix in item.get("affixes", []).slice(0, 2): option_lines.append("%s  +%.1f" % [UIFactory.localize(affix.name), affix.value])
+	if not item.get("legendary", {}).is_empty(): option_lines.append("◆ " + UIFactory.localize(item.legendary.description))
 	var options_label := UIFactory.label("\n".join(option_lines), 14, UIFactory.MUTED)
 	options_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(options_label)
@@ -267,7 +267,7 @@ func show_loot(item: Dictionary, equipped: Dictionary) -> void:
 	var compare_color := Color("#59e391") if difference >= 0.0 else Color("#f16975")
 	var toughness := _category_score(item, ["max_health", "barrier", "damage_reduction", "barrier_regen"]) - _category_score(equipped, ["max_health", "barrier", "damage_reduction", "barrier_regen"])
 	var synergy := _synergy_score(item, Game.build_tags()) - _synergy_score(equipped, Game.build_tags())
-	box.add_child(UIFactory.label("DMG %+.0f  •  TOUGH %+.0f  •  SYNERGY %+.0f  •  F EQUIP" % [difference, toughness, synergy], 14, compare_color))
+	box.add_child(UIFactory.label(UIFactory.format("DMG %+.0f  •  TOUGH %+.0f  •  SYNERGY %+.0f  •  F EQUIP", [difference, toughness, synergy]), 14, compare_color))
 	panel.add_child(box)
 	toast_layer.add_child(panel)
 	var tween := panel.create_tween()
@@ -305,7 +305,7 @@ func show_level_up(options: Array[Dictionary], rerolls: int) -> void:
 		var upgrade := options[index]
 		var card := Button.new()
 		card.custom_minimum_size = Vector2(350, 390)
-		card.text = "%d\n\n%s\n\n%s\n\n[%s]" % [index + 1, upgrade.name.to_upper(), upgrade.description, upgrade.tag.to_upper()]
+		card.text = "%d\n\n%s\n\n%s\n\n[%s]" % [index + 1, UIFactory.localize(upgrade.name), UIFactory.localize(upgrade.description), UIFactory.localize(upgrade.tag)]
 		card.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		card.add_theme_font_size_override("font_size", 22)
 		card.pressed.connect(func(): upgrade_selected.emit(upgrade); _close_overlay())
@@ -314,7 +314,7 @@ func show_level_up(options: Array[Dictionary], rerolls: int) -> void:
 	var footer := HBoxContainer.new()
 	footer.alignment = BoxContainer.ALIGNMENT_CENTER
 	footer.add_theme_constant_override("separation", 8)
-	var reroll := UIFactory.button("REROLL (%d FATE / 100G)" % rerolls, Vector2(340, 58))
+	var reroll := UIFactory.button(UIFactory.format("REROLL (%d FATE / 100G)", [rerolls]), Vector2(340, 58))
 	reroll.disabled = rerolls <= 0 and Game.current_run.gold < 100
 	reroll.pressed.connect(func(): reroll_requested.emit())
 	footer.add_child(reroll)
@@ -323,15 +323,15 @@ func show_level_up(options: Array[Dictionary], rerolls: int) -> void:
 	control_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	control_row.add_theme_constant_override("separation", 7)
 	for index in options.size():
-		var banish := UIFactory.button("BANISH %d" % (index + 1), Vector2(125, 42))
+		var banish := UIFactory.button(UIFactory.format("BANISH %d", [index + 1]), Vector2(125, 42))
 		banish.add_theme_font_size_override("font_size", 14)
 		banish.pressed.connect(func(): banish_requested.emit(options[index]))
 		control_row.add_child(banish)
-		var lock := UIFactory.button("LOCK %d" % (index + 1), Vector2(105, 42))
+		var lock := UIFactory.button(UIFactory.format("LOCK %d", [index + 1]), Vector2(105, 42))
 		lock.add_theme_font_size_override("font_size", 14)
 		lock.pressed.connect(func(): lock_requested.emit(options[index]))
 		control_row.add_child(lock)
-		var favor := UIFactory.button("FAVOR %d" % (index + 1), Vector2(115, 42))
+		var favor := UIFactory.button(UIFactory.format("FAVOR %d", [index + 1]), Vector2(115, 42))
 		favor.add_theme_font_size_override("font_size", 14)
 		favor.pressed.connect(func(): favor_requested.emit(options[index].tag))
 		control_row.add_child(favor)
@@ -355,7 +355,7 @@ func show_pause() -> void:
 	var settings_button := UIFactory.button("SETTINGS & ACCESSIBILITY")
 	settings_button.pressed.connect(show_ingame_settings)
 	box.add_child(settings_button)
-	var settings_note := UIFactory.label("Accessibility settings are available from the title screen.\nAttack %s  •  Potion %s  •  Barrier %s" % ["AUTO" if Game.settings.auto_attack else "MANUAL", "AUTO" if Game.settings.auto_potion else "MANUAL", "AUTO" if Game.settings.auto_barrier else "MANUAL"], 17, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
+	var settings_note := UIFactory.label(UIFactory.format("Accessibility settings are available from the title screen.\nAttack %s  •  Potion %s  •  Barrier %s", [UIFactory.localize("AUTO") if Game.settings.auto_attack else UIFactory.localize("MANUAL"), UIFactory.localize("AUTO") if Game.settings.auto_potion else UIFactory.localize("MANUAL"), UIFactory.localize("AUTO") if Game.settings.auto_barrier else UIFactory.localize("MANUAL")]), 17, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	settings_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(settings_note)
 	var menu := UIFactory.button("ABANDON RIFT")
@@ -371,6 +371,22 @@ func show_ingame_settings() -> void:
 	box.custom_minimum_size = Vector2(680, 690)
 	box.add_theme_constant_override("separation", 12)
 	box.add_child(UIFactory.heading("ACCESSIBILITY", 42, UIFactory.GOLD))
+	var language_row := HBoxContainer.new()
+	var language_title := UIFactory.label("LANGUAGE", 19, UIFactory.TEXT)
+	language_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	language_row.add_child(language_title)
+	var language_select := OptionButton.new()
+	var locales := [["한국어", "ko"], ["English", "en"]]
+	for index in locales.size():
+		language_select.add_item(locales[index][0], index)
+		if locales[index][1] == Game.settings.language: language_select.select(index)
+	language_select.item_selected.connect(func(index: int):
+		Game.settings.language = locales[index][1]
+		TranslationServer.set_locale(Game.settings.language)
+		call_deferred("show_ingame_settings")
+	)
+	language_row.add_child(language_select)
+	box.add_child(language_row)
 	for entry in [["AUTO ATTACK", "auto_attack"], ["AUTO POTION  •  HP ≤ 35%", "auto_potion"], ["AUTO BARRIER  •  LOW / EMPTY", "auto_barrier"], ["GAMEPAD VIBRATION", "gamepad_vibration"]]:
 		var row := HBoxContainer.new()
 		var title := UIFactory.label(entry[0], 19, UIFactory.TEXT)
@@ -413,17 +429,17 @@ func show_character() -> void:
 	var tag_keys := tags.keys()
 	tag_keys.sort_custom(func(a, b): return tags[a] > tags[b])
 	var signature: Array[String] = []
-	for i in mini(4, tag_keys.size()): signature.append("%s %d" % [str(tag_keys[i]).to_upper(), tags[tag_keys[i]]])
-	equipment_box.add_child(UIFactory.label("BUILD: " + "  /  ".join(signature), 18, UIFactory.CYAN, HORIZONTAL_ALIGNMENT_CENTER))
+	for i in mini(4, tag_keys.size()): signature.append("%s %d" % [UIFactory.localize(str(tag_keys[i])), tags[tag_keys[i]]])
+	equipment_box.add_child(UIFactory.label(UIFactory.format("BUILD: %s", ["  /  ".join(signature)]), 18, UIFactory.CYAN, HORIZONTAL_ALIGNMENT_CENTER))
 	for slot in Game.SLOTS:
 		var item: Dictionary = Game.equipment.get(slot, {})
 		var row := PanelContainer.new()
 		var row_box := HBoxContainer.new()
-		var slot_label := UIFactory.label(slot.replace("_", " ").to_upper(), 16, UIFactory.MUTED)
+		var slot_label := UIFactory.label(UIFactory.localize(slot.replace("_", " ").to_upper()), 16, UIFactory.MUTED)
 		slot_label.custom_minimum_size.x = 110
 		row_box.add_child(slot_label)
 		var item_color := DataRegistry.rarity_color(item.get("rarity", "Common")) if not item.is_empty() else Color("#65728a")
-		var item_label := UIFactory.label(item.get("name", "— EMPTY —"), 18, item_color)
+		var item_label := UIFactory.label(Game.localized_item_name(item) if not item.is_empty() else "— EMPTY —", 18, item_color)
 		item_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row_box.add_child(item_label)
 		row_box.add_child(UIFactory.label("%.0f" % Game.item_score(item, tags), 18, UIFactory.TEXT, HORIZONTAL_ALIGNMENT_RIGHT))
@@ -437,15 +453,17 @@ func show_character() -> void:
 	var tools := HBoxContainer.new()
 	tools.add_child(UIFactory.label("FILTER", 15, UIFactory.MUTED))
 	var filter_select := OptionButton.new()
-	for value in ["ALL", "RARE+", "LEGENDARY+", "BUILD TAGS"]: filter_select.add_item(value)
-	filter_select.select(maxi(0, ["ALL", "RARE+", "LEGENDARY+", "BUILD TAGS"].find(inventory_filter)))
-	filter_select.item_selected.connect(func(index: int): inventory_filter = filter_select.get_item_text(index); show_character())
+	var filter_values := ["ALL", "RARE+", "LEGENDARY+", "BUILD TAGS"]
+	for value in filter_values: filter_select.add_item(UIFactory.localize(value))
+	filter_select.select(maxi(0, filter_values.find(inventory_filter)))
+	filter_select.item_selected.connect(func(index: int): inventory_filter = filter_values[index]; show_character())
 	tools.add_child(filter_select)
 	tools.add_child(UIFactory.label("SORT", 15, UIFactory.MUTED))
 	var sort_select := OptionButton.new()
-	for value in ["BUILD SCORE", "RARITY", "ITEM LEVEL"]: sort_select.add_item(value)
-	sort_select.select(maxi(0, ["BUILD SCORE", "RARITY", "ITEM LEVEL"].find(inventory_sort)))
-	sort_select.item_selected.connect(func(index: int): inventory_sort = sort_select.get_item_text(index); show_character())
+	var sort_values := ["BUILD SCORE", "RARITY", "ITEM LEVEL"]
+	for value in sort_values: sort_select.add_item(UIFactory.localize(value))
+	sort_select.select(maxi(0, sort_values.find(inventory_sort)))
+	sort_select.item_selected.connect(func(index: int): inventory_sort = sort_values[index]; show_character())
 	tools.add_child(sort_select)
 	var salvage_low := UIFactory.button("SALVAGE LOW", Vector2(155, 44))
 	salvage_low.add_theme_font_size_override("font_size", 15)
@@ -472,7 +490,7 @@ func _inventory_row(item: Dictionary, tags: Dictionary) -> PanelContainer:
 	var color: Color = item.get("color", Color.WHITE)
 	panel.add_theme_stylebox_override("panel", UIFactory.panel_style(Color("#0d1424"), color.darkened(0.3), 2, 6))
 	var row := HBoxContainer.new()
-	var text := UIFactory.label("%s\n%s  •  ILVL %d  •  SCORE %.0f" % [item.name, item.rarity, item.item_level, Game.item_score(item, tags)], 17, color)
+	var text := UIFactory.label(UIFactory.format("%s\n%s  •  ILVL %d  •  SCORE %.0f", [Game.localized_item_name(item), UIFactory.localize(item.rarity), item.item_level, Game.item_score(item, tags)]), 17, color)
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(text)
 	var equip := UIFactory.button("EQUIP", Vector2(120, 52))

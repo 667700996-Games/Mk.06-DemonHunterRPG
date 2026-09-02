@@ -184,12 +184,12 @@ func show_title() -> void:
 	menu.alignment = BoxContainer.ALIGNMENT_CENTER
 	menu.add_theme_constant_override("separation", 14)
 	menu.add_child(UIFactory.heading("ENTER THE RIFT", 34, UIFactory.GOLD))
-	menu.add_child(UIFactory.label("Tier %d unlocked  •  %d embers" % [Game.meta.unlocked_tier, Game.meta.currency], 18, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER))
+	menu.add_child(UIFactory.label(UIFactory.format("Tier %d unlocked  •  %d embers", [Game.meta.unlocked_tier, Game.meta.currency]), 18, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER))
 	menu.add_child(UIFactory.spacer(15))
 	var start := UIFactory.button("START NEW RIFT")
 	start.pressed.connect(show_run_setup)
 	menu.add_child(start)
-	var continue_button := UIFactory.button("QUICK RUN — TIER %d" % Game.meta.highest_tier)
+	var continue_button := UIFactory.button(UIFactory.format("QUICK RUN — TIER %d", [Game.meta.highest_tier]))
 	continue_button.pressed.connect(func(): _start_run(Game.meta.highest_tier, _biome_for_tier(Game.meta.highest_tier)))
 	menu.add_child(continue_button)
 	var upgrades := UIFactory.button("LEGACY UPGRADES")
@@ -229,7 +229,7 @@ func show_run_setup() -> void:
 	tier_row.add_child(UIFactory.label("DIFFICULTY TIER", 22, UIFactory.TEXT))
 	var tier_select := OptionButton.new()
 	tier_select.custom_minimum_size = Vector2(310, 58)
-	for tier in range(1, mini(10, int(Game.meta.unlocked_tier)) + 1): tier_select.add_item("TIER %02d" % tier, tier)
+	for tier in range(1, mini(10, int(Game.meta.unlocked_tier)) + 1): tier_select.add_item(UIFactory.format("TIER %02d", [tier]), tier)
 	tier_select.select(maxi(0, tier_select.item_count - 1))
 	selected_tier = tier_select.get_selected_id()
 	tier_select.item_selected.connect(func(index: int): selected_tier = tier_select.get_item_id(index))
@@ -243,7 +243,7 @@ func show_run_setup() -> void:
 		var card := Button.new()
 		card.toggle_mode = true
 		card.custom_minimum_size = Vector2(270, 310)
-		card.text = "%s\n\n%s\n\nBOSS: %s" % [biome.name.to_upper(), biome.description, _boss_name(biome)]
+		card.text = UIFactory.format("%s\n\n%s\n\nBOSS: %s", [UIFactory.localize(biome.name), UIFactory.localize(biome.description), UIFactory.localize(_boss_name(biome))])
 		card.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		card.add_theme_font_size_override("font_size", 18)
 		card.pressed.connect(_choose_biome.bind(biome.id, card, biome_buttons))
@@ -297,7 +297,7 @@ func show_results(result: Dictionary) -> void:
 	box.custom_minimum_size = Vector2(980, 840)
 	box.add_theme_constant_override("separation", 13)
 	box.add_child(UIFactory.heading("RIFT CONQUERED" if result.cleared else "THE HUNTER FELL", 58, UIFactory.GOLD if result.cleared else UIFactory.CRIMSON))
-	box.add_child(UIFactory.label("TIER %d  •  %s  •  %s" % [result.tier, DataRegistry.get_biome(result.biome).name, _format_time(result.elapsed)], 22, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER))
+	box.add_child(UIFactory.label(UIFactory.format("TIER %d  •  %s  •  %s", [result.tier, UIFactory.localize(DataRegistry.get_biome(result.biome).name), _format_time(result.elapsed)]), 22, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER))
 	var grid := GridContainer.new()
 	grid.columns = 4
 	grid.add_theme_constant_override("h_separation", 12)
@@ -319,12 +319,12 @@ func show_results(result: Dictionary) -> void:
 	var sorted_tags := tags.keys()
 	sorted_tags.sort_custom(func(a, b): return tags[a] > tags[b])
 	var summary: Array[String] = []
-	for index in mini(3, sorted_tags.size()): summary.append(str(sorted_tags[index]).to_upper())
-	box.add_child(UIFactory.label("BUILD SIGNATURE  •  " + " / ".join(summary), 20, UIFactory.CYAN, HORIZONTAL_ALIGNMENT_CENTER))
+	for index in mini(3, sorted_tags.size()): summary.append(UIFactory.localize(str(sorted_tags[index])))
+	box.add_child(UIFactory.label(UIFactory.format("BUILD SIGNATURE  •  %s", [" / ".join(summary)]), 20, UIFactory.CYAN, HORIZONTAL_ALIGNMENT_CENTER))
 	var rarity_text: Array[String] = []
 	for rarity in DataRegistry.RARITIES:
-		if result.rarities.get(rarity, 0) > 0: rarity_text.append("%s %d" % [rarity, result.rarities[rarity]])
-	box.add_child(UIFactory.label("LOOT  •  " + "   ".join(rarity_text), 18, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER))
+		if result.rarities.get(rarity, 0) > 0: rarity_text.append("%s %d" % [UIFactory.localize(rarity), result.rarities[rarity]])
+	box.add_child(UIFactory.label(UIFactory.format("LOOT  •  %s", ["   ".join(rarity_text)]), 18, UIFactory.MUTED, HORIZONTAL_ALIGNMENT_CENTER))
 	var actions := HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation", 16)
@@ -347,7 +347,7 @@ func show_meta() -> void:
 	var box := VBoxContainer.new()
 	box.custom_minimum_size = Vector2(850, 760)
 	box.add_theme_constant_override("separation", 18)
-	var currency_label := UIFactory.heading("%d LEGACY EMBERS" % Game.meta.currency, 38, UIFactory.GOLD)
+	var currency_label := UIFactory.heading(UIFactory.format("%d LEGACY EMBERS", [Game.meta.currency]), 38, UIFactory.GOLD)
 	box.add_child(UIFactory.heading("LEGACY UPGRADES", 54))
 	box.add_child(currency_label)
 	var offers := [
@@ -357,9 +357,9 @@ func show_meta() -> void:
 	]
 	for offer in offers:
 		var row := HBoxContainer.new()
-		row.add_child(UIFactory.label("%s\n%s\nCURRENT: %s" % [offer[0], offer[1], Game.meta[offer[2]]], 20, UIFactory.TEXT))
+		row.add_child(UIFactory.label(UIFactory.format("%s\n%s\nCURRENT: %s", [UIFactory.localize(offer[0]), UIFactory.localize(offer[1]), Game.meta[offer[2]]]), 20, UIFactory.TEXT))
 		row.get_child(0).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var buy := UIFactory.button("BUY — %d" % offer[4], Vector2(210, 66))
+		var buy := UIFactory.button(UIFactory.format("BUY — %d", [offer[4]]), Vector2(210, 66))
 		buy.disabled = Game.meta.currency < offer[4]
 		buy.pressed.connect(_buy_meta.bind(offer[2], offer[3], offer[4]))
 		row.add_child(buy)
@@ -444,6 +444,7 @@ func show_settings() -> void:
 	left.custom_minimum_size.x = 610
 	left.add_theme_constant_override("separation", 10)
 	left.add_child(UIFactory.heading("DISPLAY & CONTROL", 24, UIFactory.CYAN))
+	_add_language_option(left)
 	_add_option(left, "RESOLUTION", "resolution", ["1280x720", "1600x900", "1920x1080", "2560x1440", "3840x2160"])
 	_add_option(left, "FPS LIMIT", "fps_limit", [60, 90, 120, 144, 240])
 	_add_toggle(left, "FULLSCREEN", "fullscreen")
@@ -485,6 +486,25 @@ func _add_toggle(parent: VBoxContainer, title: String, key: String) -> void:
 	toggle.button_pressed = bool(Game.settings[key])
 	toggle.toggled.connect(func(value: bool): Game.settings[key] = value)
 	row.add_child(toggle)
+	parent.add_child(row)
+
+func _add_language_option(parent: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	var text_label := UIFactory.label("LANGUAGE", 20, UIFactory.TEXT)
+	text_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(text_label)
+	var select := OptionButton.new()
+	select.custom_minimum_size = Vector2(280, 48)
+	var locales := [["한국어", "ko"], ["English", "en"]]
+	for index in locales.size():
+		select.add_item(locales[index][0], index)
+		if locales[index][1] == Game.settings.language: select.select(index)
+	select.item_selected.connect(func(index: int):
+		Game.settings.language = locales[index][1]
+		TranslationServer.set_locale(Game.settings.language)
+		call_deferred("show_settings")
+	)
+	row.add_child(select)
 	parent.add_child(row)
 
 func _add_slider(parent: VBoxContainer, title: String, key: String, minimum: float, maximum: float, step: float) -> void:

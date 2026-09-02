@@ -11,7 +11,7 @@ const SLOTS := ["weapon", "head", "chest", "gloves", "boots", "amulet", "ring_1"
 const INVENTORY_CAP := 80
 
 var settings := {
-	"fullscreen": false, "resolution": "1920x1080", "vsync": true, "fps_limit": 120, "master_volume": 0.8,
+	"language": "ko", "fullscreen": false, "resolution": "1920x1080", "vsync": true, "fps_limit": 120, "master_volume": 0.8,
 	"music_volume": 0.6, "sfx_volume": 0.8, "ui_volume": 0.8, "screen_shake": 0.75,
 	"damage_numbers": 0.75, "flash_intensity": 0.7, "auto_attack": true,
 	"gamepad_vibration": true, "ui_scale": 1.0, "hold_to_attack": true,
@@ -52,6 +52,17 @@ func _normalize_item(item: Dictionary) -> Dictionary:
 	var rarity_index := clampi(int(item.get("rarity_index", 0)), 0, colors.size() - 1)
 	item["color"] = colors[rarity_index]
 	return item
+
+func localized_item_name(item: Dictionary) -> String:
+	if item.is_empty(): return TranslationServer.translate("Unknown")
+	var legendary: Dictionary = item.get("legendary", {})
+	if not legendary.is_empty(): return TranslationServer.translate(str(legendary.get("name", item.get("name", "Unknown"))))
+	var base_name := TranslationServer.translate(str(item.get("base_name", item.get("name", "Unknown"))))
+	var affixes: Array = item.get("affixes", [])
+	if affixes.is_empty(): return base_name
+	var affix_name := TranslationServer.translate(str(affixes[0].get("name", "")))
+	if str(settings.get("language", "ko")) == "ko": return "%s %s" % [affix_name, base_name]
+	return str(item.get("name", base_name))
 
 func _merge_known(target: Dictionary, source: Dictionary) -> void:
 	for key in source:
@@ -230,6 +241,7 @@ func legendary_effects() -> Dictionary:
 	return output
 
 func apply_settings() -> void:
+	TranslationServer.set_locale(str(settings.get("language", "ko")))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if settings.vsync else DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = int(settings.fps_limit)
 	if settings.fullscreen:

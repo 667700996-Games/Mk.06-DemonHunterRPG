@@ -1,0 +1,871 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: RIFTFALL 1.0\n"
+"Language: ko\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# Main menu and run flow
+msgid "R I F T F A L L"
+msgstr "R I F T F A L L"
+
+msgid "NIGHT OF A THOUSAND BLADES"
+msgstr "천 자루 칼날의 밤"
+
+msgid "ONE HUNTER  •  ENDLESS BUILDS  •  NO MERCY"
+msgstr "한 명의 사냥꾼  •  무한한 빌드  •  자비는 없다"
+
+msgid "ENTER THE RIFT"
+msgstr "균열에 진입"
+
+msgid "Tier %d unlocked  •  %d embers"
+msgstr "티어 %d 해금  •  잿불 %d개"
+
+msgid "START NEW RIFT"
+msgstr "새 균열 시작"
+
+msgid "QUICK RUN — TIER %d"
+msgstr "빠른 출정 — 티어 %d"
+
+msgid "LEGACY UPGRADES"
+msgstr "유산 강화"
+
+msgid "HUNTER RECORDS"
+msgstr "사냥꾼 기록"
+
+msgid "SETTINGS"
+msgstr "설정"
+
+msgid "QUIT TO DESKTOP"
+msgstr "게임 종료"
+
+msgid "CHOOSE YOUR RIFT"
+msgstr "균열 선택"
+
+msgid "Higher tiers increase density, elite affixes, danger, and loot quality."
+msgstr "티어가 높을수록 적 밀도, 정예 속성, 위험도와 전리품 품질이 증가합니다."
+
+msgid "DIFFICULTY TIER"
+msgstr "난이도 티어"
+
+msgid "TIER %02d"
+msgstr "티어 %02d"
+
+msgid "%s\n\n%s\n\nBOSS: %s"
+msgstr "%s\n\n%s\n\n보스: %s"
+
+msgid "BACK"
+msgstr "뒤로"
+
+msgid "OPEN RIFT"
+msgstr "균열 열기"
+
+msgid "Unknown"
+msgstr "알 수 없음"
+
+msgid "RIFT CONQUERED"
+msgstr "균열 정복"
+
+msgid "THE HUNTER FELL"
+msgstr "사냥꾼 쓰러짐"
+
+msgid "TIER %d  •  %s  •  %s"
+msgstr "티어 %d  •  %s  •  %s"
+
+msgid "KILLS"
+msgstr "처치"
+
+msgid "ELITES"
+msgstr "정예"
+
+msgid "DAMAGE"
+msgstr "피해량"
+
+msgid "DPS"
+msgstr "초당 피해"
+
+msgid "HIGHEST CRIT"
+msgstr "최고 치명타"
+
+msgid "DAMAGE TAKEN"
+msgstr "받은 피해"
+
+msgid "ITEMS"
+msgstr "아이템"
+
+msgid "EMBERS"
+msgstr "잿불"
+
+msgid "BUILD SIGNATURE  •  %s"
+msgstr "빌드 특성  •  %s"
+
+msgid "LOOT  •  %s"
+msgstr "전리품  •  %s"
+
+msgid "MAIN MENU"
+msgstr "메인 메뉴"
+
+msgid "RETRY TIER"
+msgstr "같은 티어 재도전"
+
+msgid "NEXT TIER"
+msgstr "다음 티어"
+
+# Meta progression and statistics
+msgid "%d LEGACY EMBERS"
+msgstr "유산 잿불 %d개"
+
+msgid "STARTING COIN"
+msgstr "출정 자금"
+
+msgid "Begin each rift with +25 gold."
+msgstr "균열을 시작할 때 골드 25를 추가로 받습니다."
+
+msgid "FATE'S MERCY"
+msgstr "운명의 자비"
+
+msgid "Begin each rift with +1 reroll."
+msgstr "균열을 시작할 때 새로고침 횟수 1회를 추가로 받습니다."
+
+msgid "RIFT MASTERY"
+msgstr "균열 숙련"
+
+msgid "Permanent +3% starting power."
+msgstr "시작 공격력이 영구적으로 3% 증가합니다."
+
+msgid "%s\n%s\nCURRENT: %s"
+msgstr "%s\n%s\n현재: %s"
+
+msgid "BUY — %d"
+msgstr "구매 — %d"
+
+msgid "UNSEAL 3 ITEM BASES — 80"
+msgstr "아이템 기반 3개 해금 — 80"
+
+msgid "UNBIND A LEGENDARY POWER — 150"
+msgstr "전설 능력 1개 해금 — 150"
+
+msgid "BACK TO TITLE"
+msgstr "타이틀로 돌아가기"
+
+msgid "TOTAL RUNS"
+msgstr "총 출정 횟수"
+
+msgid "TOTAL KILLS"
+msgstr "총 처치 수"
+
+msgid "ELITE KILLS"
+msgstr "정예 처치 수"
+
+msgid "BOSS KILLS"
+msgstr "보스 처치 수"
+
+msgid "HIGHEST TIER"
+msgstr "최고 티어"
+
+msgid "FASTEST CLEAR"
+msgstr "최단 클리어"
+
+msgid "HIGHEST HIT"
+msgstr "최고 단일 피해"
+
+msgid "HIGHEST DPS"
+msgstr "최고 초당 피해"
+
+msgid "LEGENDARY DROPS"
+msgstr "전설 획득 수"
+
+# Settings
+msgid "DISPLAY & CONTROL"
+msgstr "화면 및 조작"
+
+msgid "AUDIO & ACCESSIBILITY"
+msgstr "오디오 및 접근성"
+
+msgid "LANGUAGE"
+msgstr "언어"
+
+msgid "RESOLUTION"
+msgstr "해상도"
+
+msgid "FPS LIMIT"
+msgstr "FPS 제한"
+
+msgid "FULLSCREEN"
+msgstr "전체 화면"
+
+msgid "V-SYNC"
+msgstr "수직 동기화"
+
+msgid "AUTO ATTACK"
+msgstr "자동 공격"
+
+msgid "HOLD TO ATTACK"
+msgstr "누르는 동안 공격"
+
+msgid "GAMEPAD VIBRATION"
+msgstr "게임패드 진동"
+
+msgid "AUTO SALVAGE COMMON"
+msgstr "일반 자동 분해"
+
+msgid "AUTO SALVAGE MAGIC"
+msgstr "마법 자동 분해"
+
+msgid "AUTO SALVAGE RARE"
+msgstr "희귀 자동 분해"
+
+msgid "AUTO POTION  •  HP ≤ 35%"
+msgstr "자동 물약  •  체력 35% 이하"
+
+msgid "AUTO BARRIER  •  LOW / EMPTY"
+msgstr "자동 베리어  •  부족 / 소진"
+
+msgid "MASTER VOLUME"
+msgstr "전체 음량"
+
+msgid "MUSIC VOLUME"
+msgstr "음악 음량"
+
+msgid "SFX VOLUME"
+msgstr "효과음 음량"
+
+msgid "UI VOLUME"
+msgstr "UI 음량"
+
+msgid "SCREEN SHAKE"
+msgstr "화면 흔들림"
+
+msgid "FLASH INTENSITY"
+msgstr "섬광 강도"
+
+msgid "DAMAGE NUMBERS"
+msgstr "피해 숫자"
+
+msgid "UI SCALE"
+msgstr "UI 크기"
+
+msgid "SAVE & RETURN"
+msgstr "저장 후 돌아가기"
+
+msgid "SAVE & BACK"
+msgstr "저장 후 뒤로"
+
+msgid "ACCESSIBILITY"
+msgstr "접근성"
+
+msgid "AUTO"
+msgstr "자동"
+
+msgid "MANUAL"
+msgstr "수동"
+
+msgid "ON"
+msgstr "켜짐"
+
+msgid "OFF"
+msgstr "꺼짐"
+
+# HUD, pause, level-up and inventory
+msgid "THE LAST HUNTER"
+msgstr "최후의 사냥꾼"
+
+msgid "LV 1"
+msgstr "레벨 1"
+
+msgid "LV %d"
+msgstr "레벨 %d"
+
+msgid "GREATER RIFT"
+msgstr "대균열"
+
+msgid "TIER 01"
+msgstr "티어 01"
+
+msgid "0 KILLS  •  0 ELITES"
+msgstr "처치 0  •  정예 0"
+
+msgid "%s KILLS  •  %s ELITES  •  %dG"
+msgstr "처치 %s  •  정예 %s  •  %dG"
+
+msgid "NO ELITE SIGNAL"
+msgstr "정예 신호 없음"
+
+msgid "%d FPS  •  %s NODES"
+msgstr "%d FPS  •  노드 %s"
+
+msgid "RIFT GUARDIAN"
+msgstr "균열 수호자"
+
+msgid "PHASE I"
+msgstr "페이즈 I"
+
+msgid "PHASE %s  •  %s"
+msgstr "페이즈 %s  •  %s"
+
+msgid "POTION"
+msgstr "물약"
+
+msgid "NOVA"
+msgstr "노바"
+
+msgid "METEOR"
+msgstr "메테오"
+
+msgid "AEGIS"
+msgstr "이지스"
+
+msgid "DASH"
+msgstr "회피"
+
+msgid "%s  •  ITEM LEVEL %d"
+msgstr "%s  •  아이템 레벨 %d"
+
+msgid "DMG %+.0f  •  TOUGH %+.0f  •  SYNERGY %+.0f  •  F EQUIP"
+msgstr "공격 %+.0f  •  방어 %+.0f  •  시너지 %+.0f  •  F 장착"
+
+msgid "POWER SURGE"
+msgstr "힘의 격류"
+
+msgid "CHOOSE ONE — THE RIFT WAITS"
+msgstr "하나를 선택하세요 — 균열은 기다립니다"
+
+msgid "REROLL (%d FATE / 100G)"
+msgstr "새로고침 (운명 %d / 100G)"
+
+msgid "BANISH %d"
+msgstr "%d번 추방"
+
+msgid "LOCK %d"
+msgstr "%d번 잠금"
+
+msgid "FAVOR %d"
+msgstr "%d번 선호"
+
+msgid "RIFT PAUSED"
+msgstr "균열 일시정지"
+
+msgid "RESUME"
+msgstr "계속하기"
+
+msgid "CHARACTER & LOOT"
+msgstr "캐릭터 및 전리품"
+
+msgid "SETTINGS & ACCESSIBILITY"
+msgstr "설정 및 접근성"
+
+msgid "Accessibility settings are available from the title screen.\nAttack %s  •  Potion %s  •  Barrier %s"
+msgstr "타이틀 화면에서도 접근성 설정을 변경할 수 있습니다.\n공격 %s  •  물약 %s  •  베리어 %s"
+
+msgid "ABANDON RIFT"
+msgstr "균열 포기"
+
+msgid "THE HUNTER"
+msgstr "사냥꾼"
+
+msgid "BUILD: %s"
+msgstr "빌드: %s"
+
+msgid "WEAPON"
+msgstr "무기"
+
+msgid "HEAD"
+msgstr "머리"
+
+msgid "CHEST"
+msgstr "흉갑"
+
+msgid "GLOVES"
+msgstr "장갑"
+
+msgid "BOOTS"
+msgstr "장화"
+
+msgid "AMULET"
+msgstr "목걸이"
+
+msgid "RING 1"
+msgstr "반지 1"
+
+msgid "RING 2"
+msgstr "반지 2"
+
+msgid "— EMPTY —"
+msgstr "— 비어 있음 —"
+
+msgid "RECENT LOOT"
+msgstr "최근 전리품"
+
+msgid "Build-aware score compares tags, affixes, and legendary synergy."
+msgstr "빌드 점수는 태그, 속성, 전설 시너지를 종합해 비교합니다."
+
+msgid "FILTER"
+msgstr "필터"
+
+msgid "ALL"
+msgstr "전체"
+
+msgid "RARE+"
+msgstr "희귀 이상"
+
+msgid "LEGENDARY+"
+msgstr "전설 이상"
+
+msgid "BUILD TAGS"
+msgstr "빌드 태그"
+
+msgid "SORT"
+msgstr "정렬"
+
+msgid "BUILD SCORE"
+msgstr "빌드 점수"
+
+msgid "RARITY"
+msgstr "등급"
+
+msgid "ITEM LEVEL"
+msgstr "아이템 레벨"
+
+msgid "SALVAGE LOW"
+msgstr "하위 등급 분해"
+
+msgid "No loot carried. The rift is hungry."
+msgstr "보유한 전리품이 없습니다. 균열은 굶주렸습니다."
+
+msgid "CLOSE [TAB]"
+msgstr "닫기 [TAB]"
+
+msgid "%s\n%s  •  ILVL %d  •  SCORE %.0f"
+msgstr "%s\n%s  •  아이템 레벨 %d  •  점수 %.0f"
+
+msgid "EQUIP"
+msgstr "장착"
+
+msgid "SALVAGE"
+msgstr "분해"
+
+# Combat feedback
+msgid "RIFT OPENED  •  HUNT"
+msgstr "균열 개방  •  사냥 시작"
+
+msgid "EQUIPPED  •  %s"
+msgstr "장착 완료  •  %s"
+
+msgid "ELITE HUNT  •  %s"
+msgstr "정예 출현  •  %s"
+
+msgid "RIFT GUARDIAN DESCENDS"
+msgstr "균열 수호자가 강림합니다"
+
+msgid "CURSE BROKEN  •  TREASURE CLAIMED"
+msgstr "저주 해제  •  보물 획득"
+
+msgid "PHASE %d  •  THE RIFT DEEPENS"
+msgstr "페이즈 %d  •  균열이 깊어집니다"
+
+msgid "AUTO-SALVAGED  •  %s"
+msgstr "자동 분해  •  %s"
+
+msgid "%s DROP  •  %s"
+msgstr "%s 획득  •  %s"
+
+msgid "BANISHED  •  %s"
+msgstr "추방됨  •  %s"
+
+msgid "LOCKED  •  %s"
+msgstr "잠금  •  %s"
+
+msgid "UNLOCKED  •  %s"
+msgstr "잠금 해제  •  %s"
+
+msgid "FATE FAVORS  •  %s"
+msgstr "운명의 선호  •  %s"
+
+msgid "SKILL EVOLVED  •  %s"
+msgstr "스킬 진화  •  %s"
+
+msgid "%s DISCOVERED"
+msgstr "%s 발견"
+
+msgid "CURSED ONSLAUGHT  •  SURVIVE 30 SECONDS"
+msgstr "저주받은 공세  •  30초 동안 생존하세요"
+
+msgid "THE HUNTER HAS FALLEN"
+msgstr "사냥꾼이 쓰러졌습니다"
+
+msgid "%s  •  %s  •  %dm"
+msgstr "%s  •  %s  •  %dm"
+
+msgid "GOD MODE %s"
+msgstr "무적 모드 %s"
+
+msgid "F — INVOKE %s"
+msgstr "F — %s 발동"
+
+# Rarities, tags, directions and world modifiers
+msgid "Common"
+msgstr "일반"
+
+msgid "Magic"
+msgstr "마법"
+
+msgid "Rare"
+msgstr "희귀"
+
+msgid "Epic"
+msgstr "영웅"
+
+msgid "Legendary"
+msgstr "전설"
+
+msgid "Mythic"
+msgstr "신화"
+
+msgid "physical"
+msgstr "물리"
+
+msgid "fire"
+msgstr "화염"
+
+msgid "ice"
+msgstr "냉기"
+
+msgid "lightning"
+msgstr "번개"
+
+msgid "poison"
+msgstr "독"
+
+msgid "bleed"
+msgstr "출혈"
+
+msgid "void"
+msgstr "공허"
+
+msgid "projectile"
+msgstr "투사체"
+
+msgid "critical"
+msgstr "치명타"
+
+msgid "melee"
+msgstr "근접"
+
+msgid "area"
+msgstr "범위"
+
+msgid "summon"
+msgstr "소환"
+
+msgid "movement"
+msgstr "이동"
+
+msgid "lowhealth"
+msgstr "저체력"
+
+msgid "barrier"
+msgstr "베리어"
+
+msgid "lucky"
+msgstr "행운"
+
+msgid "cooldown"
+msgstr "재사용 대기시간"
+
+msgid "attack"
+msgstr "공격"
+
+msgid "duration"
+msgstr "지속시간"
+
+msgid "BOSS"
+msgstr "보스"
+
+msgid "ELITE"
+msgstr "정예"
+
+msgid "N"
+msgstr "북"
+
+msgid "S"
+msgstr "남"
+
+msgid "E"
+msgstr "동"
+
+msgid "W"
+msgstr "서"
+
+msgid "Frenzy"
+msgstr "광란"
+
+msgid "Greed"
+msgstr "탐욕"
+
+msgid "Thunder"
+msgstr "천둥"
+
+msgid "Blood"
+msgstr "피의 제단"
+
+msgid "Cursed Chest"
+msgstr "저주받은 상자"
+
+msgid "Relentless"
+msgstr "집요함"
+
+msgid "Volcanic"
+msgstr "화산"
+
+msgid "Stormbound"
+msgstr "폭풍결속"
+
+msgid "Graveborn"
+msgstr "무덤태생"
+
+msgid "Arcane"
+msgstr "비전"
+
+msgid "Mortar"
+msgstr "박격포"
+
+msgid "Frozen"
+msgstr "빙결"
+
+msgid "Poison"
+msgstr "맹독"
+
+msgid "Teleporter"
+msgstr "순간이동"
+
+msgid "Waller"
+msgstr "장벽"
+
+msgid "Shielding"
+msgstr "보호막"
+
+msgid "Vampiric"
+msgstr "흡혈"
+
+msgid "Explosive"
+msgstr "폭발"
+
+msgid "Lightning"
+msgstr "낙뢰"
+
+msgid "Fire Trail"
+msgstr "불길"
+
+msgid "Summoner"
+msgstr "소환사"
+
+msgid "Berserker"
+msgstr "광전사"
+
+# Biomes, bosses and enemies
+msgid "The Gloam Cemetery"
+msgstr "황혼의 묘지"
+
+msgid "Moonlit graves, violet rifts, and drowned bells."
+msgstr "달빛 아래 무덤과 보랏빛 균열, 물에 잠긴 종소리가 맴도는 곳입니다."
+
+msgid "The Cinder Reliquary"
+msgstr "잿불 성유물실"
+
+msgid "Furnace-lit catacombs beneath a ruined basilica."
+msgstr "폐허가 된 대성당 아래, 용광로 빛이 번지는 지하 묘지입니다."
+
+msgid "The Glassfrost Expanse"
+msgstr "유리서리 설원"
+
+msgid "A frozen rift where ancient stars sleep below the ice."
+msgstr "얼음 아래 고대의 별들이 잠든 얼어붙은 균열입니다."
+
+msgid "The Ossuary King"
+msgstr "납골당의 왕"
+
+msgid "Cinder Matron"
+msgstr "잿불 대모"
+
+msgid "Winter Maw"
+msgstr "겨울의 아귀"
+
+msgid "Velis the Starved"
+msgstr "굶주린 벨리스"
+
+msgid "The Null Shepherd"
+msgstr "무의 목자"
+
+msgid "Crown of a Thousand Teeth"
+msgstr "천 개 이빨의 왕관"
+
+msgid "Heart of the Furnace"
+msgstr "용광로의 심장"
+
+msgid "The Hunger Beneath Ice"
+msgstr "얼음 아래의 굶주림"
+
+msgid "The Crimson Eclipse"
+msgstr "진홍의 일식"
+
+msgid "Silence at World's End"
+msgstr "세상 끝의 침묵"
+
+msgid "Grave Thrall"
+msgstr "무덤 노예"
+
+msgid "Ash Fang"
+msgstr "잿빛 송곳니"
+
+msgid "Ember Cultist"
+msgstr "잿불 광신도"
+
+msgid "Bone Bulwark"
+msgstr "뼈 방벽"
+
+msgid "Plague Bladder"
+msgstr "역병 주머니"
+
+msgid "Carrion Mites"
+msgstr "시체 진드기"
+
+msgid "Runic Warden"
+msgstr "룬 감시자"
+
+msgid "Blood Chanter"
+msgstr "피의 영창자"
+
+msgid "Veil Shade"
+msgstr "장막 망령"
+
+msgid "Dreadhorn"
+msgstr "공포뿔"
+
+msgid "Grave Binder"
+msgstr "무덤 결속자"
+
+msgid "Hollow Eye"
+msgstr "공허한 눈"
+
+# Base item names
+msgid "Rift Repeater"
+msgstr "균열 연발총"
+
+msgid "Grave Razor"
+msgstr "무덤 면도날"
+
+msgid "Stormneedle"
+msgstr "폭풍바늘"
+
+msgid "Cinder Staff"
+msgstr "잿불 지팡이"
+
+msgid "Winter Fang"
+msgstr "겨울 송곳니"
+
+msgid "Widow Bow"
+msgstr "과부의 활"
+
+msgid "Bone Hammer"
+msgstr "뼈 망치"
+
+msgid "Void Scepter"
+msgstr "공허 홀"
+
+msgid "Iron Cowl"
+msgstr "철두건"
+
+msgid "Seer's Hood"
+msgstr "예언자의 두건"
+
+msgid "Ember Circlet"
+msgstr "잿불 머리띠"
+
+msgid "Frost Crown"
+msgstr "서리 왕관"
+
+msgid "Hunter Mask"
+msgstr "사냥꾼 가면"
+
+msgid "Ossuary Plate"
+msgstr "납골당 판금갑"
+
+msgid "Blood Coat"
+msgstr "피의 외투"
+
+msgid "Storm Mail"
+msgstr "폭풍 사슬갑옷"
+
+msgid "Frostweave"
+msgstr "서리직조 갑옷"
+
+msgid "Plague Wrap"
+msgstr "역병 싸개"
+
+msgid "Razor Grips"
+msgstr "칼날 손아귀"
+
+msgid "Spark Gauntlets"
+msgstr "불꽃 건틀릿"
+
+msgid "Venom Touch"
+msgstr "맹독의 손길"
+
+msgid "Frost Claws"
+msgstr "서리 발톱"
+
+msgid "Rift Weavers"
+msgstr "균열 직조장갑"
+
+msgid "Ashwalkers"
+msgstr "잿길장화"
+
+msgid "Gale Treads"
+msgstr "돌풍 발걸음"
+
+msgid "Gravestriders"
+msgstr "무덤걸음 장화"
+
+msgid "Icebound Steps"
+msgstr "얼음결속 장화"
+
+msgid "Blood Runners"
+msgstr "피의 질주화"
+
+msgid "Eye of the Storm"
+msgstr "폭풍의 눈"
+
+msgid "Funeral Charm"
+msgstr "장송 부적"
+
+msgid "Ember Heart"
+msgstr "잿불 심장"
+
+msgid "Winter's Memory"
+msgstr "겨울의 기억"
+
+msgid "Coil Ring"
+msgstr "전류 고리"
+
+msgid "Red Oath"
+msgstr "붉은 맹세"
+
+msgid "Serpent Loop"
+msgstr "뱀의 고리"
+
+msgid "Cinder Band"
+msgstr "잿불 반지"
+
+msgid "Pale Signet"
+msgstr "창백한 인장"
+
+msgid "Rift Seal"
+msgstr "균열 봉인"
+
+msgid "Bone Circle"
+msgstr "뼈 고리"
+
+msgid "Wanderer's Knot"
+msgstr "방랑자의 매듭"

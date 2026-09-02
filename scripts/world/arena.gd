@@ -186,7 +186,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("interact") and not latest_item.is_empty() and not get_tree().paused:
 		Game.equip_item(latest_item)
-		hud.announce("EQUIPPED  •  %s" % latest_item.name, latest_item.color, 0.8)
+		hud.announce(UIFactory.format("EQUIPPED  •  %s", [Game.localized_item_name(latest_item)]), latest_item.color, 0.8)
 		latest_item = {}
 
 func _spawn_director(delta: float) -> void:
@@ -224,7 +224,9 @@ func _spawn_enemy(make_elite: bool, near_position := Vector2.INF, forced_data: D
 	enemies.append(enemy)
 	if make_elite:
 		_burst(origin, biome.accent, 1.8, "elite")
-		hud.announce("ELITE HUNT  •  " + " + ".join(enemy.elite_affixes), Color("#ffc857"), 0.7)
+		var localized_affixes: Array[String] = []
+		for affix in enemy.elite_affixes: localized_affixes.append(UIFactory.localize(affix))
+		hud.announce(UIFactory.format("ELITE HUNT  •  %s", [" + ".join(localized_affixes)]), Color("#ffc857"), 0.7)
 	return enemy
 
 func _start_boss() -> void:
@@ -587,7 +589,7 @@ func _on_enemy_attack(enemy: RiftEnemy, kind: String, payload: Dictionary) -> vo
 			if payload.element == "bleed" and payload.effects.has("bleed_cdr"):
 				player.reduce_cooldowns(float(payload.effects.bleed_cdr) * 0.035)
 		"phase":
-			hud.announce("PHASE %d  •  THE RIFT DEEPENS" % payload.phase, biome.accent, 0.8)
+			hud.announce(UIFactory.format("PHASE %d  •  THE RIFT DEEPENS", [payload.phase]), biome.accent, 0.8)
 			_flash(biome.accent, 0.22)
 			_shake(12.0)
 		"boss_slam": _spawn_zone(enemy.global_position, payload.radius, payload.damage, 0.55, enemy.data.get("element", "void"))
@@ -710,13 +712,13 @@ func _collect_item(item: Dictionary) -> void:
 		if feedback: hud.show_loot(item, equipped)
 	else:
 		latest_item = {}
-		if feedback: hud.announce("AUTO-SALVAGED  •  %s" % item.rarity.to_upper(), item.color, 0.55)
+		if feedback: hud.announce(UIFactory.format("AUTO-SALVAGED  •  %s", [UIFactory.localize(item.rarity)]), item.color, 0.55)
 	if not feedback: return
 	AudioManager.play_sfx("legendary" if item.rarity_index >= 4 else "loot", 1.35 if item.rarity_index == 5 else 1.0, 1.0 if item.rarity_index == 5 else (-2.0 if item.rarity_index >= 4 else -7.0))
 	if item.rarity_index >= 4:
 		_flash(item.color, 0.48 if item.rarity_index == 5 else 0.26)
 		if item.rarity_index == 5: _shake(10.0)
-		hud.announce("%s DROP  •  %s" % [item.rarity.to_upper(), item.name.to_upper()], item.color, 1.1)
+		hud.announce(UIFactory.format("%s DROP  •  %s", [UIFactory.localize(item.rarity), Game.localized_item_name(item)]), item.color, 1.1)
 
 func _allow_loot_feedback(rarity_index: int) -> bool:
 	var now := Time.get_ticks_msec()
@@ -781,18 +783,19 @@ func _on_reroll() -> void:
 func _on_banish_upgrade(upgrade: Dictionary) -> void:
 	if upgrade.id not in banished_upgrade_ids: banished_upgrade_ids.append(upgrade.id)
 	locked_upgrade_ids.erase(upgrade.id)
-	hud.announce("BANISHED  •  %s" % upgrade.name.to_upper(), UIFactory.CRIMSON, 0.45)
+	hud.announce(UIFactory.format("BANISHED  •  %s", [UIFactory.localize(upgrade.name)]), UIFactory.CRIMSON, 0.45)
 	_open_level_up()
 
 func _on_lock_upgrade(upgrade: Dictionary) -> void:
 	if upgrade.id in locked_upgrade_ids: locked_upgrade_ids.erase(upgrade.id)
 	else: locked_upgrade_ids.append(upgrade.id)
-	hud.announce(("LOCKED  •  " if upgrade.id in locked_upgrade_ids else "UNLOCKED  •  ") + upgrade.name.to_upper(), UIFactory.CYAN, 0.45)
+	var lock_message := "LOCKED  •  %s" if upgrade.id in locked_upgrade_ids else "UNLOCKED  •  %s"
+	hud.announce(UIFactory.format(lock_message, [UIFactory.localize(upgrade.name)]), UIFactory.CYAN, 0.45)
 	hud.show_level_up(current_upgrade_options, Game.current_run.rerolls)
 
 func _on_favor_upgrade(tag: String) -> void:
 	favored_upgrade_tag = tag
-	hud.announce("FATE FAVORS  •  %s" % tag.to_upper(), UIFactory.GOLD, 0.55)
+	hud.announce(UIFactory.format("FATE FAVORS  •  %s", [UIFactory.localize(tag)]), UIFactory.GOLD, 0.55)
 
 func _check_evolutions() -> void:
 	var evolved: Array = Game.current_run.get("evolutions", [])
@@ -806,7 +809,7 @@ func _check_evolutions() -> void:
 			evolved.append(evolution.id)
 			Game.current_run.evolutions = evolved
 			Game.current_run.upgrades.append({"id": evolution.id, "name": evolution.name, "stat": "damage", "value": 55.0, "tag": evolution.tags[0], "description": evolution.description})
-			hud.announce("SKILL EVOLVED  •  %s" % evolution.name.to_upper(), Color("#ff4fd8"), 1.8)
+			hud.announce(UIFactory.format("SKILL EVOLVED  •  %s", [UIFactory.localize(evolution.name)]), Color("#ff4fd8"), 1.8)
 			_flash(Color("#ff4fd8"), 0.35)
 			break
 
@@ -817,7 +820,7 @@ func _spawn_shrine(origin: Vector2, type := "") -> void:
 	shrine.setup(origin, type)
 	shrine.activated.connect(_on_shrine_activated)
 	shrines.append(shrine)
-	hud.announce("%s DISCOVERED" % shrine.shrine_type.to_upper(), biome.accent, 0.9)
+	hud.announce(UIFactory.format("%s DISCOVERED", [UIFactory.localize(shrine.shrine_type)]), biome.accent, 0.9)
 
 func _on_shrine_activated(shrine: RiftShrine, type: String) -> void:
 	AudioManager.play_sfx("level", 0.75, -1.0)
@@ -898,7 +901,7 @@ func _danger_indicator() -> String:
 	if not is_instance_valid(target): return ""
 	var offset := target.global_position - player.global_position
 	var cardinal := "E" if absf(offset.x) > absf(offset.y) and offset.x > 0 else ("W" if absf(offset.x) > absf(offset.y) else ("S" if offset.y > 0 else "N"))
-	return "%s  •  %s  •  %dm" % ["BOSS" if target.boss else "ELITE", cardinal, int(offset.length() / 10.0)]
+	return UIFactory.format("%s  •  %s  •  %dm", [UIFactory.localize("BOSS" if target.boss else "ELITE"), UIFactory.localize(cardinal), int(offset.length() / 10.0)])
 
 func _rebuild_spatial_hash() -> void:
 	spatial_hash.clear()
@@ -1020,7 +1023,7 @@ func _debug_command(command: String) -> void:
 	match command:
 		"god":
 			god_mode = not god_mode
-			hud.announce("GOD MODE " + ("ON" if god_mode else "OFF"), UIFactory.GOLD, 0.6)
+			hud.announce(UIFactory.format("GOD MODE %s", [UIFactory.localize("ON" if god_mode else "OFF")]), UIFactory.GOLD, 0.6)
 		"enemy": _spawn_enemy(false, player.global_position + Vector2(280, 0))
 		"elite": _spawn_enemy(true, player.global_position + Vector2(300, 0))
 		"boss":
