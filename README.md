@@ -63,6 +63,8 @@ the matching Godot export templates, then export from **Project → Export**.
 | Pause | Esc | Start |
 
 Auto-attack is enabled by default and can be disabled in Settings for manual aim.
+Optional auto-potion (at 35% health) and smart auto-barrier toggles are disabled
+by default. Frost nova, dash, meteor, and RIFTFALL always remain manual skills.
 Controls, cooldowns, danger telegraphs, elite markers, rarity beams, and build
 comparisons are visible in play without a separate tutorial.
 
@@ -128,8 +130,9 @@ monitors. The menu is never instantiated as user-facing release UI.
 ## Settings and accessibility
 
 Resolution, fullscreen, VSync, FPS limit, master/music/SFX/UI volume, auto attack,
-gamepad vibration, screen-shake strength, flash intensity, damage-number density,
-and UI scale are saved locally. Critical gameplay information is communicated by
+auto potion, auto barrier, gamepad vibration, screen-shake strength, flash
+intensity, damage-number density, and UI scale are saved locally. Critical
+gameplay information is communicated by
 silhouette, geometry, labels, and animation in addition to color.
 
 ## Known limitations

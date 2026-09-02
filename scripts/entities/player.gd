@@ -88,14 +88,14 @@ func _process(delta: float) -> void:
 		q_timer = 5.5 * (1.0 - minf(Game.stat_total("cooldown") / 100.0, 0.65))
 		ability_requested.emit("meteor", get_global_mouse_position(), facing)
 	var manual_barrier := Input.is_action_just_pressed("skill_e")
-	var automatic_barrier := Game.settings.auto_barrier and _should_auto_barrier(auto_target)
+	var automatic_barrier: bool = bool(Game.settings.auto_barrier) and _should_auto_barrier(auto_target)
 	if (manual_barrier or automatic_barrier) and e_timer <= 0.0:
 		_use_barrier()
 	if Input.is_action_just_pressed("ultimate") and ultimate_charge >= 1.0:
 		ultimate_charge = 0.0
 		ability_requested.emit("ultimate", global_position, facing)
 	var manual_potion := Input.is_action_just_pressed("potion")
-	var automatic_potion := Game.settings.auto_potion and health / maxf(max_health, 1.0) <= 0.35
+	var automatic_potion: bool = bool(Game.settings.auto_potion) and health / maxf(max_health, 1.0) <= 0.35
 	if (manual_potion or automatic_potion) and potion_charges > 0 and potion_timer <= 0.0 and health < max_health:
 		_use_potion()
 	queue_redraw()
