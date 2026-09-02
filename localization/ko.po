@@ -869,3 +869,682 @@ msgstr "뼈 고리"
 
 msgid "Wanderer's Knot"
 msgstr "방랑자의 매듭"
+
+# Item affixes
+msgid "Brutal"
+msgstr "잔혹한"
+
+msgid "Merciless"
+msgstr "무자비한"
+
+msgid "Swift"
+msgstr "신속한"
+
+msgid "Frenzied"
+msgstr "광란의"
+
+msgid "Keen"
+msgstr "예리한"
+
+msgid "Vicious"
+msgstr "흉포한"
+
+msgid "Splintering"
+msgstr "파편화하는"
+
+msgid "Piercing"
+msgstr "관통하는"
+
+msgid "Bounding"
+msgstr "튕기는"
+
+msgid "Chaining"
+msgstr "연쇄하는"
+
+msgid "Vast"
+msgstr "광대한"
+
+msgid "Enduring"
+msgstr "영속하는"
+
+msgid "Hastened"
+msgstr "가속된"
+
+msgid "Forceful"
+msgstr "강력한"
+
+msgid "Fortunate"
+msgstr "행운의"
+
+msgid "Venomous"
+msgstr "맹독의"
+
+msgid "Bleeding"
+msgstr "출혈의"
+
+msgid "Scorching"
+msgstr "작열하는"
+
+msgid "Glacial"
+msgstr "빙하의"
+
+msgid "Executing"
+msgstr "처형자의"
+
+msgid "Vital"
+msgstr "생명력의"
+
+msgid "Warded"
+msgstr "수호받는"
+
+msgid "Fleet"
+msgstr "쾌속의"
+
+msgid "Magnetic"
+msgstr "자성의"
+
+msgid "Learned"
+msgstr "현자의"
+
+msgid "Greedy"
+msgstr "탐욕의"
+
+msgid "Seeking"
+msgstr "추적하는"
+
+msgid "Colossal"
+msgstr "거대한"
+
+msgid "Stormforged"
+msgstr "폭풍벼림"
+
+msgid "Emberwrought"
+msgstr "잿불세공"
+
+msgid "Rimebound"
+msgstr "서리결속"
+
+msgid "Plagueborn"
+msgstr "역병태생"
+
+msgid "Bloodletter"
+msgstr "피흘리개"
+
+msgid "Gravebound"
+msgstr "무덤결속"
+
+msgid "Duelist"
+msgstr "결투가의"
+
+msgid "Marksman"
+msgstr "명사수의"
+
+msgid "Unyielding"
+msgstr "불굴의"
+
+msgid "Thorned"
+msgstr "가시 돋친"
+
+msgid "Resolute"
+msgstr "결연한"
+
+msgid "Echoing"
+msgstr "메아리치는"
+
+msgid "Unstable"
+msgstr "불안정한"
+
+msgid "Focused"
+msgstr "집중된"
+
+msgid "Slayer's"
+msgstr "학살자의"
+
+msgid "Harvester's"
+msgstr "수확자의"
+
+msgid "Prismatic"
+msgstr "분광의"
+
+msgid "Guardian's"
+msgstr "수호자의"
+
+msgid "Reckless"
+msgstr "무모한"
+
+msgid "Temporal"
+msgstr "시간의"
+
+msgid "of Ruin"
+msgstr "파멸의"
+
+msgid "of Haste"
+msgstr "가속의"
+
+msgid "of Precision"
+msgstr "정밀함의"
+
+msgid "of Annihilation"
+msgstr "절멸의"
+
+msgid "of the Many"
+msgstr "군세의"
+
+msgid "of Depth"
+msgstr "심연의"
+
+msgid "of Rebound"
+msgstr "반동의"
+
+msgid "of Storms"
+msgstr "폭풍의"
+
+msgid "of Reach"
+msgstr "확장의"
+
+msgid "of Ages"
+msgstr "영겁의"
+
+msgid "of Recurrence"
+msgstr "재귀의"
+
+msgid "of Impact"
+msgstr "충격의"
+
+msgid "of Fortune"
+msgstr "행운의"
+
+msgid "of Venom"
+msgstr "맹독의"
+
+msgid "of Gore"
+msgstr "선혈의"
+
+msgid "of Embers"
+msgstr "잿불의"
+
+msgid "of Rime"
+msgstr "서리의"
+
+msgid "of Finality"
+msgstr "종결의"
+
+msgid "of Vigor"
+msgstr "활력의"
+
+msgid "of the Aegis"
+msgstr "이지스의"
+
+msgid "of Wind"
+msgstr "바람의"
+
+msgid "of Attraction"
+msgstr "인력의"
+
+msgid "of Wisdom"
+msgstr "지혜의"
+
+msgid "of Avarice"
+msgstr "탐욕의"
+
+msgid "of Velocity"
+msgstr "속도의"
+
+msgid "of Mass"
+msgstr "질량의"
+
+msgid "of Thunder"
+msgstr "천둥의"
+
+msgid "of Infernos"
+msgstr "지옥불의"
+
+msgid "of Winter"
+msgstr "겨울의"
+
+msgid "of Decay"
+msgstr "부패의"
+
+msgid "of Wounds"
+msgstr "상처의"
+
+msgid "of Legions"
+msgstr "군단의"
+
+msgid "of the Duel"
+msgstr "결투의"
+
+msgid "of the Hunt"
+msgstr "사냥의"
+
+msgid "of Iron"
+msgstr "강철의"
+
+msgid "of Thirst"
+msgstr "갈증의"
+
+msgid "of Revenge"
+msgstr "복수의"
+
+msgid "of Escape"
+msgstr "탈출의"
+
+msgid "of Echoes"
+msgstr "메아리의"
+
+msgid "of Blasts"
+msgstr "폭발의"
+
+msgid "of Kings"
+msgstr "왕의"
+
+msgid "of Elite Bane"
+msgstr "정예 파멸의"
+
+msgid "of Harvest"
+msgstr "수확의"
+
+msgid "of the Rift"
+msgstr "균열의"
+
+msgid "of Elements"
+msgstr "원소의"
+
+msgid "of Shelter"
+msgstr "안식처의"
+
+msgid "of Fury"
+msgstr "분노의"
+
+msgid "of Moments"
+msgstr "찰나의"
+
+msgid "of Falling Coins"
+msgstr "쏟아지는 동전의"
+
+msgid "of Survival"
+msgstr "생존의"
+
+# Legendary powers
+msgid "Storm Web"
+msgstr "폭풍 그물"
+
+msgid "Chain lightning jumps 5 additional times."
+msgstr "연쇄 번개가 5회 추가로 도약합니다."
+
+msgid "Red Bloom"
+msgstr "붉은 개화"
+
+msgid "Critical kills detonate for 120% weapon damage."
+msgstr "치명타로 처치하면 무기 피해의 120%만큼 폭발합니다."
+
+msgid "Hoarfrost Step"
+msgstr "상고대 발걸음"
+
+msgid "Dash releases a freezing nova."
+msgstr "회피 시 빙결 노바를 방출합니다."
+
+msgid "Execution Oath"
+msgstr "처형의 맹세"
+
+msgid "Bleeding enemies below 20% health are executed."
+msgstr "체력이 20% 미만인 출혈 적을 처형합니다."
+
+msgid "Trident Law"
+msgstr "삼지창의 법칙"
+
+msgid "Every third projectile splits into three."
+msgstr "세 번째 투사체마다 세 갈래로 분열합니다."
+
+msgid "Funeral Pyres"
+msgstr "장송 화장터"
+
+msgid "Burning enemies explode on death."
+msgstr "불타는 적이 죽을 때 폭발합니다."
+
+msgid "Slow Constellation"
+msgstr "느린 별자리"
+
+msgid "Orbit blades hit twice as hard but rotate slower."
+msgstr "공전 칼날이 느리게 회전하지만 두 배의 피해를 줍니다."
+
+msgid "Thunderheart"
+msgstr "천둥심장"
+
+msgid "Every fifth attack calls a thunderbolt."
+msgstr "다섯 번째 공격마다 벼락을 부릅니다."
+
+msgid "Winterglass"
+msgstr "겨울유리"
+
+msgid "Frozen enemies shatter into piercing shards."
+msgstr "빙결된 적이 관통 파편으로 산산이 부서집니다."
+
+msgid "Plague Tide"
+msgstr "역병 해일"
+
+msgid "Poison spreads to three nearby enemies on death."
+msgstr "중독된 적이 죽으면 주변 적 셋에게 독이 퍼집니다."
+
+msgid "Grave Company"
+msgstr "무덤 중대"
+
+msgid "Elite kills raise a permanent skeletal ally."
+msgstr "정예를 처치하면 영구적인 해골 동료를 일으킵니다."
+
+msgid "Mirror Edge"
+msgstr "거울 칼날"
+
+msgid "Projectiles return after reaching maximum range."
+msgstr "투사체가 최대 사거리에 도달한 뒤 되돌아옵니다."
+
+msgid "Black Sun"
+msgstr "검은 태양"
+
+msgid "Lucky hits create a collapsing void well."
+msgstr "행운의 적중이 붕괴하는 공허 우물을 생성합니다."
+
+msgid "Last Heart"
+msgstr "마지막 심장"
+
+msgid "At low health, gain barrier and double attack speed."
+msgstr "저체력에서 베리어를 얻고 공격 속도가 두 배가 됩니다."
+
+msgid "Moving Massacre"
+msgstr "움직이는 학살"
+
+msgid "Damage scales with current movement speed."
+msgstr "현재 이동 속도에 비례해 피해가 증가합니다."
+
+msgid "Blood Price"
+msgstr "피의 대가"
+
+msgid "Critical hits cost health and deal triple damage."
+msgstr "치명타가 체력을 소모하고 세 배의 피해를 줍니다."
+
+msgid "Living Furnace"
+msgstr "살아 있는 용광로"
+
+msgid "Barrier pulses fire damage every second."
+msgstr "베리어가 매초 화염 피해를 방출합니다."
+
+msgid "Absolute Zero"
+msgstr "절대영도"
+
+msgid "Critical hits against chilled enemies freeze them."
+msgstr "냉각된 적에게 치명타를 가하면 빙결시킵니다."
+
+msgid "Forked Fate"
+msgstr "갈라진 운명"
+
+msgid "Lucky-hit projectiles fork toward two targets."
+msgstr "행운의 적중 투사체가 두 대상에게 갈라집니다."
+
+msgid "Bone Tempest"
+msgstr "뼈의 폭풍"
+
+msgid "Summons explode and immediately reform."
+msgstr "소환수가 폭발한 뒤 즉시 재형성됩니다."
+
+msgid "Rift Hunger"
+msgstr "균열의 굶주림"
+
+msgid "Pickup radius grants equal bonus damage."
+msgstr "획득 반경만큼 추가 피해를 얻습니다."
+
+msgid "Razorwind"
+msgstr "칼날바람"
+
+msgid "Dash repeats the last melee strike along its path."
+msgstr "회피 경로를 따라 마지막 근접 공격을 반복합니다."
+
+msgid "Perpetual Motion"
+msgstr "영구 운동"
+
+msgid "Kills during dash reduce all cooldowns."
+msgstr "회피 중 처치하면 모든 재사용 대기시간이 감소합니다."
+
+msgid "Crown of Sparks"
+msgstr "불꽃 왕관"
+
+msgid "Chain endpoints release lightning novas."
+msgstr "연쇄의 끝점에서 번개 노바가 방출됩니다."
+
+msgid "Phoenix Debt"
+msgstr "불사조의 빚"
+
+msgid "Fatal damage instead ignites the world once per run."
+msgstr "출정당 한 번, 치명적인 피해 대신 세상을 불태웁니다."
+
+msgid "Cold Mirror"
+msgstr "차가운 거울"
+
+msgid "Barrier loss fires retaliating frost spears."
+msgstr "베리어가 감소하면 반격하는 서리 창을 발사합니다."
+
+msgid "Serpent Eternity"
+msgstr "영원의 뱀"
+
+msgid "Poison has infinite duration and stacks faster."
+msgstr "독이 영구 지속되며 더 빠르게 중첩됩니다."
+
+msgid "Scarlet Clock"
+msgstr "진홍 시계"
+
+msgid "Each bleed tick advances active cooldowns."
+msgstr "출혈 피해가 발생할 때마다 활성 재사용 대기시간이 줄어듭니다."
+
+msgid "A Million Cuts"
+msgstr "백만 번의 베기"
+
+msgid "Every 20th hit repeats all recent hit damage."
+msgstr "20번째 적중마다 최근 적중 피해를 모두 반복합니다."
+
+msgid "Worldbreaker"
+msgstr "세계파괴자"
+
+msgid "Overkill damage becomes a growing shockwave."
+msgstr "초과 피해가 커져 가는 충격파로 변합니다."
+
+# Level-up upgrades
+msgid "Ferocity"
+msgstr "흉포함"
+
+msgid "+18% all damage."
+msgstr "모든 피해가 18% 증가합니다."
+
+msgid "Quick Hands"
+msgstr "빠른 손"
+
+msgid "+15% attack speed."
+msgstr "공격 속도가 15% 증가합니다."
+
+msgid "Twin Shot"
+msgstr "쌍발 사격"
+
+msgid "Fire +1 projectile."
+msgstr "투사체를 1개 추가로 발사합니다."
+
+msgid "Long Reach"
+msgstr "긴 사거리"
+
+msgid "+20% attack area and projectile size."
+msgstr "공격 범위와 투사체 크기가 20% 증가합니다."
+
+msgid "Fatal Intent"
+msgstr "치명적 의도"
+
+msgid "+25% critical damage."
+msgstr "치명타 피해가 25% 증가합니다."
+
+msgid "Charged Path"
+msgstr "대전 경로"
+
+msgid "Chain +1 target."
+msgstr "연쇄 대상이 1명 증가합니다."
+
+msgid "Ghost Step"
+msgstr "유령 걸음"
+
+msgid "Dash cooldown -15%."
+msgstr "회피 재사용 대기시간이 15% 감소합니다."
+
+msgid "Pyromancy"
+msgstr "화염술"
+
+msgid "+25% fire damage and burn chance."
+msgstr "화염 피해와 연소 확률이 25% 증가합니다."
+
+msgid "Open Wounds"
+msgstr "벌어진 상처"
+
+msgid "+12% bleed chance."
+msgstr "출혈 확률이 12% 증가합니다."
+
+msgid "Venomcraft"
+msgstr "맹독술"
+
+msgid "+25% poison damage."
+msgstr "독 피해가 25% 증가합니다."
+
+msgid "Winter's Grip"
+msgstr "겨울의 손아귀"
+
+msgid "+12% freeze chance."
+msgstr "빙결 확률이 12% 증가합니다."
+
+msgid "Stormpulse"
+msgstr "폭풍맥동"
+
+msgid "Every fifth shot releases lightning."
+msgstr "다섯 번째 사격마다 번개를 방출합니다."
+
+msgid "Volatile Critical"
+msgstr "불안정한 치명타"
+
+msgid "Critical kills explode."
+msgstr "치명타로 처치한 적이 폭발합니다."
+
+msgid "Shattercraft"
+msgstr "분쇄술"
+
+msgid "Frozen enemies shatter on death."
+msgstr "빙결된 적이 죽을 때 산산이 부서집니다."
+
+msgid "Cinder Trail"
+msgstr "잿불 궤적"
+
+msgid "Dash leaves a damaging fire trail."
+msgstr "회피 경로에 피해를 주는 불길을 남깁니다."
+
+msgid "Splinter Kill"
+msgstr "파편 처치"
+
+msgid "Projectiles split after a kill."
+msgstr "적을 처치하면 투사체가 분열합니다."
+
+msgid "Bloodrush"
+msgstr "피의 질주"
+
+msgid "Gain attack speed below 40% health."
+msgstr "체력이 40% 미만일 때 공격 속도를 얻습니다."
+
+msgid "Aegis"
+msgstr "이지스"
+
+msgid "Gain 20 barrier and regenerate it."
+msgstr "베리어 20을 얻고 재생합니다."
+
+msgid "Vacuum Soul"
+msgstr "진공 영혼"
+
+msgid "+60 pickup radius and +10% XP."
+msgstr "획득 반경이 60, 경험치 획득량이 10% 증가합니다."
+
+msgid "Skill cooldowns recover 18% faster."
+msgstr "스킬 재사용 대기시간이 18% 더 빠르게 회복됩니다."
+
+msgid "Giant Slayer"
+msgstr "거인 학살자"
+
+msgid "Deal +30% damage to elites and bosses."
+msgstr "정예와 보스에게 주는 피해가 30% 증가합니다."
+
+msgid "Grave Call"
+msgstr "무덤의 부름"
+
+msgid "Summon a bone wisp companion."
+msgstr "뼈 도깨비불 동료를 소환합니다."
+
+msgid "Second Wind"
+msgstr "재기의 바람"
+
+msgid "Heal 1% health after every 25 kills."
+msgstr "25마리 처치마다 체력을 1% 회복합니다."
+
+msgid "Momentum"
+msgstr "가속도"
+
+msgid "Movement speed adds weapon damage."
+msgstr "이동 속도에 비례해 무기 피해가 증가합니다."
+
+# Evolutions
+msgid "Storm God"
+msgstr "폭풍신"
+
+msgid "Lightning becomes a continuous branching tempest."
+msgstr "번개가 끝없이 갈라지는 폭풍으로 진화합니다."
+
+msgid "Crimson End"
+msgstr "진홍의 종말"
+
+msgid "Melee arcs execute wounded packs and drink their blood."
+msgstr "근접 참격이 상처 입은 무리를 처형하고 피를 흡수합니다."
+
+msgid "White Silence"
+msgstr "백색 침묵"
+
+msgid "Frozen foes recursively shatter the entire screen."
+msgstr "빙결된 적의 연쇄 분쇄가 화면 전체로 퍼집니다."
+
+msgid "Funeral Sun"
+msgstr "장송의 태양"
+
+msgid "Burning deaths feed an expanding solar explosion."
+msgstr "불타는 죽음이 팽창하는 태양 폭발을 키웁니다."
+
+msgid "Death Company"
+msgstr "죽음의 중대"
+
+msgid "A legion reforms whenever an elite falls."
+msgstr "정예가 쓰러질 때마다 군단이 재형성됩니다."
+
+msgid "Void Lens"
+msgstr "공허 렌즈"
+
+msgid "Shots collapse into gravity wells on lucky hit."
+msgstr "행운의 적중 시 사격이 중력 우물로 붕괴합니다."
+
+msgid "Serpent World"
+msgstr "뱀의 세계"
+
+msgid "Poison never expires and leaps across the horde."
+msgstr "독이 사라지지 않고 적 무리 사이로 퍼집니다."
+
+msgid "Razor Comet"
+msgstr "칼날 혜성"
+
+msgid "Every dash becomes a repeating blade storm."
+msgstr "모든 회피가 반복되는 칼날 폭풍으로 변합니다."
+
+msgid "Furnace Soul"
+msgstr "용광로 영혼"
+
+msgid "Barrier becomes a pulsing, self-feeding inferno."
+msgstr "베리어가 스스로 타오르는 맥동 지옥불로 변합니다."
+
+msgid "Last Eclipse"
+msgstr "마지막 일식"
+
+msgid "Near death, time slows while attacks multiply."
+msgstr "죽음에 가까워지면 시간이 느려지고 공격이 증식합니다."

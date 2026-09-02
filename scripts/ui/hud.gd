@@ -213,7 +213,7 @@ func update_hud(player: RiftPlayer, rift_progress: float, rift_goal: float, boss
 	kill_text.text = UIFactory.format("%s KILLS  •  %s ELITES  •  %dG", [_compact(Game.current_run.kills), Game.current_run.elite_kills, Game.current_run.gold])
 	danger_text.text = danger_info if not danger_info.is_empty() else UIFactory.localize("NO ELITE SIGNAL")
 	var buff_lines: Array[String] = []
-	for key in buffs: buff_lines.append(UIFactory.format("%s %ds", [UIFactory.localize(str(key)), int(buffs[key])]))
+	for key in buffs: buff_lines.append(UIFactory.format("%s %ds", [UIFactory.localize(str(key).capitalize()), int(buffs[key])]))
 	buff_text.text = "  •  ".join(buff_lines)
 	fps_label.text = UIFactory.format("%d FPS  •  %s NODES", [Engine.get_frames_per_second(), _compact(get_tree().get_node_count())])
 	var cooldowns := player.cooldown_ratios()

@@ -18,6 +18,15 @@ func _assert_true(condition: bool, message: String) -> void:
 func _run() -> void:
 	await get_tree().process_frame
 	original_state = Game.serialize().duplicate(true)
+	var original_language: String = Game.settings.language
+	Game.settings.language = "ko"
+	Game.apply_settings()
+	_assert_true(UIFactory.localize("SETTINGS") == "설정", "Korean locale translates interface text")
+	Game.settings.language = "en"
+	Game.apply_settings()
+	_assert_true(UIFactory.localize("SETTINGS") == "SETTINGS", "English locale restores source interface text")
+	Game.settings.language = original_language
+	Game.apply_settings()
 	Game.settings.auto_salvage_common = false
 	Game.settings.auto_salvage_magic = false
 	Game.settings.auto_salvage_rare = false

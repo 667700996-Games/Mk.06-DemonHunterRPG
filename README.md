@@ -135,6 +135,11 @@ intensity, damage-number density, and UI scale are saved locally. Critical
 gameplay information is communicated by
 silhouette, geometry, labels, and animation in addition to color.
 
+The game supports Korean and English from both the title and in-run settings
+menus. Korean is the default for new and pre-localization save files; changing
+the language rebuilds the current settings screen immediately and is persisted
+with the rest of the settings.
+
 ## Known limitations
 
 - The repository intentionally contains no copyrighted or license-ambiguous audio
