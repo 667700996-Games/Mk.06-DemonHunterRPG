@@ -1,0 +1,11 @@
+{
+  "time_ns": 1789429900932082000,
+  "du_kib": "4\t./scenes\n20\t./tools\n7064\t./.godot\n52\t./tests\n80\t./docs\n60\t./builds\n276\t./scripts\n4\t./.github\n56\t./autoload\n0\t./export_templates\n3088\t./.git\n0\t./script_templates\n24\t./data\n1808\t./assets\n0\t./text_editor_themes\n36\t./localization\n0\t./feature_profiles\n12616\t.\n",
+  "total_kib": 12616,
+  "baseline_total_kib": 13832,
+  "project_reduction_kib": 1216,
+  "free_bytes": 116150165504,
+  "baseline_free_bytes": 115813810176,
+  "session_free_bytes_delta": 336355328,
+  "managed_work_remaining": []
+}
