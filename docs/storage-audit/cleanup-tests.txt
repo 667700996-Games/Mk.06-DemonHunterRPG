@@ -1,0 +1,58 @@
+test_dead_guardian_live_engine_preserves_job (test_build_cleanup.CleanupTests) ... ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ACTIVE PROCESS GROUP: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-ufpvtwqv/builds/.managed/work/4c4b3e3ec7644e71bd97448ba84ae278
+ok
+test_foreign_paths_symlinks_and_cleanup_warning (test_build_cleanup.CleanupTests) ... WARNING: retained path /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9ycqh6jd/builds/.managed/work/8f8b7f59839c486486885f66146ba76d: symlink found; manual inspection required
+WARNING: retained path /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9ycqh6jd/builds/.managed/work/unknown: unrecognized job; no deletion
+WARNING: retained path /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9ycqh6jd/builds/.managed/work/unknown: unrecognized job; no deletion
+ok
+test_graceful_interrupts (test_build_cleanup.CleanupTests) ... ok
+test_interrupted_publication_keeps_old_package (test_build_cleanup.CleanupTests) ... STEP: /var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/fake-godot --headless --path /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/source --import --log-file /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/engine.log
+STEP: /var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/fake-godot --headless --path /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/source --log-file /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/engine.log --export-pack Windows Desktop /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/package/RIFTFALL.pck
+STEP: /var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/fake-godot --headless --path /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/source --main-pack /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/package/RIFTFALL.pck --script /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/validate.gd --log-file /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-_9caei_r/builds/.managed/work/a8b996337a674ab4a4aa99c2d9acae37/engine.log
+ok
+test_invalid_package_cannot_replace_existing_output (test_build_cleanup.CleanupTests) ... ok
+test_killed_parent_live_child_protection_and_recovery (test_build_cleanup.CleanupTests) ... ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-9uouva9z/builds/.managed/work/c8b3f8c6c71c4cd694ee4651fccacdd5
+ok
+test_release_and_symbols_never_pruned (test_build_cleanup.CleanupTests) ... ok
+test_retention_separates_targets (test_build_cleanup.CleanupTests) ... ok
+test_source_and_managed_root_symlink_refused (test_build_cleanup.CleanupTests) ... ok
+test_stale_power_loss_job_and_unowned_log (test_build_cleanup.CleanupTests) ... WARNING: retained path /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-7dndbnbg/builds/.managed/logs/ffffffffffffffffffffffffffffffff.log: [Errno 2] No such file or directory: '/private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-7dndbnbg/builds/.managed/logs/ffffffffffffffffffffffffffffffff.json'
+ok
+test_success_retention_logs_and_failure_preserves_latest (test_build_cleanup.CleanupTests) ... ok
+test_two_concurrent_jobs_and_clean (test_build_cleanup.CleanupTests) ... ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-7x51h4aq/builds/.managed/work/15ee9c2886e1454ebbc6bc370692db75
+ACTIVE: /private/var/folders/vk/nxz6ct8j7qgbq7dsm3vqzlch0000gn/T/riftfall-cleanup-test-7x51h4aq/builds/.managed/work/b7237a4ad36e4d5da2a253b323e54f49
+ok
+test_verify_only_and_missing_tool (test_build_cleanup.CleanupTests) ... ok
+test_zero_exit_with_engine_error_rejected (test_build_cleanup.CleanupTests) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 16.277s
+
+OK

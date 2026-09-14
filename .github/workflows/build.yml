@@ -8,7 +8,7 @@ on:
         description: Development export target
         type: choice
         options: [macos, windows, pack]
-        default: macos
+        default: windows
 permissions:
   contents: read
 jobs:

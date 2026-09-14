@@ -6,6 +6,10 @@ Godot 4.7.2 stable, macOS Universal / Windows Desktop. 기존 배포 프리셋�
 서명·버전 설정은 변경하지 않는다. 빌드 호스트는 Python 3.9+가 있는 macOS 또는
 Linux/POSIX이다. Windows 결과물을 macOS에서 교차 빌드할 수 있다. Windows 네이티브
 호스트, 웹·모바일·콘솔은 구현/검증 범위가 아니다.
+현재 macOS Universal 프리셋은 ETC2 ASTC 가져오기 설정 누락으로 엔진이 거부한다.
+이는 기존 설정 문제이며 이번 정리에서 출시 설정을 변경하지 않았다. Windows export와
+내장 PCK의 데이터/이미지 로드·메인 씬 remap 존재 검증은 macOS에서 통과했다.
+Windows에서의 실제 게임 실행과 macOS 앱 생성은 검증되지 않았다.
 
 ```sh
 python3 tools/build.py build --target macos
@@ -34,6 +38,7 @@ export templates가 필요하다. `pack`은 게임 데이터 검증용이며 독
 등록 잠금은 생성/회수/게시를 직렬화하고, 작업 잠금은 Godot가 실행되는 별도 보호
 프로세스에도 상속한다. CLI만 강제 종료되어도 살아 있는 Godot 작업은 회수하지 않는다.
 정상 종료·오류·SIGINT/SIGTERM/SIGHUP은 자식을 종료/회수한 뒤 자기 작업을 정리한다.
+보호 프로세스만 죽어도 기록된 프로세스 그룹이 살아 있으면 정리를 유예한다.
 SIGKILL/전원 차단 뒤에는 다음 build/clean이 소유 표식과 비차단 파일 잠금으로 회수한다.
 알 수 없는 경로·symlink·삭제 실패는 경고와 남은 경로를 출력한다. 로컬 파일시스템을
 전제로 한다. 잠금/rename 의미가 다른 네트워크 공유에서는 사용하지 않는다.

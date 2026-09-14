@@ -1,0 +1,50 @@
+{
+  "reason": {
+    "imported": "Texture import metadata maps original title_graveyard.png to generated ctex; fresh isolated Godot import succeeded.",
+    "exported": "file_cache maps original content.tres/main.tscn/default_bus_layout.tres to generated res/scn; old export-validation.log confirms these are export intermediates."
+  },
+  "deleted": {
+    ".godot/exported/133200997/export-19246414aa9fb561ced4b8dce477acec-default_bus_layout.res": {
+      "bytes": 903,
+      "allocated": 4096,
+      "sha256": "2e7b40370d066318acd79b3980987bc91a13237e6449ef4d31808c779f8f677e"
+    },
+    ".godot/exported/133200997/file_cache": {
+      "bytes": 478,
+      "allocated": 4096,
+      "sha256": "575119863a851e7300a842774d2e6b1729a2ed10d71ee3ab8f5a3733cee56437"
+    },
+    ".godot/exported/133200997/export-3ad5c15c4f3250da0cc7c1af1770d85f-main.scn": {
+      "bytes": 713,
+      "allocated": 4096,
+      "sha256": "a0a98520f4e71181f7c15eb751310f4edee69c7907b7cfdafc5e3e745f6baf59"
+    },
+    ".godot/exported/133200997/export-61ef65544017669fab824707ee951f2d-content.res": {
+      "bytes": 16766,
+      "allocated": 20480,
+      "sha256": "8679f097c8b2d0ace701fe0d8bb448f51dff69f34dd79e88f9e6c2e2c611c8bf"
+    },
+    ".godot/imported/title_graveyard.png-41f1108be197cabe18c1d04cba34c68a.ctex": {
+      "bytes": 1538154,
+      "allocated": 1540096,
+      "sha256": "dde2472e25ea95f88c5eb2c4b5d86276509049ede7c73de9cffec73a6f40268f"
+    },
+    ".godot/imported/title_graveyard.png-41f1108be197cabe18c1d04cba34c68a.md5": {
+      "bytes": 91,
+      "allocated": 4096,
+      "sha256": "f8649eb2568f051509e96cbcb14c9f125208be424f99f98f2af31782c680daa3"
+    }
+  },
+  "immediately_before": {
+    "time_ns": 1789429532702126000,
+    "free_bytes": 115645792256,
+    "du_kib": 14028
+  },
+  "immediately_after": {
+    "time_ns": 1789429532747417000,
+    "free_bytes": 115647430656,
+    "du_kib": 12488
+  },
+  "free_bytes_delta": 1638400,
+  "allocated_deleted_bytes": 1576960
+}

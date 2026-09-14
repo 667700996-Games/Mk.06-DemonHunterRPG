@@ -121,6 +121,19 @@ class Store:
             self.symbols = directory(self.base / 'symbols')
             (self.base / '.gdignore').touch()
 
+    def command_active(self, job):
+        active = job / 'command.json'
+        if not active.exists():
+            return False
+        pgid = read_json(active).get('pgid')
+        if not isinstance(pgid, int) or pgid <= 1:
+            raise ValueError('invalid command process group')
+        try:
+            os.killpg(pgid, 0)
+        except ProcessLookupError:
+            return False
+        return True  # conservative if PID/group IDs were reused
+
     def recover(self):
         with lock(self.base / 'registry.lock'):
             for job in self.work.iterdir():
@@ -129,6 +142,9 @@ class Store:
                     continue
                 try:
                     with lock(job / 'lease.lock', blocking=False):
+                        if self.command_active(job):
+                            print(f'ACTIVE PROCESS GROUP: {job}', flush=True)
+                            continue
                         self.protect_symbols(job)
                         self.archive_log(job)
                         remove_owned(job, self.work, 'work')
@@ -159,6 +175,8 @@ class Store:
             if dst.is_symlink():
                 raise ValueError(f'symlink refused: {dst}')
             dst.write_bytes(data)
+            atomic_json(self.logs / (job.name + '.json'),
+                        {'owner': OWNER, 'id': job.name, 'kind': 'log'})
 
     def prune(self):
         # Caller holds registry lock. Only successful managed development exports.
@@ -174,7 +192,8 @@ class Store:
                 if owned(p, 'dev'):
                     try:
                         meta = read_json(p / 'owner.json')
-                        if meta.get('target') == target and meta.get('complete') is True:
+                        if (meta.get('target') == target and meta.get('complete') is True
+                                and isinstance(meta.get('completed_ns'), int)):
                             packages.append((meta['completed_ns'], p))
                     except (OSError, ValueError, KeyError) as exc:
                         warn(p, str(exc))
@@ -190,18 +209,29 @@ class Store:
                 except (OSError, ValueError, KeyError) as exc:
                     warn(pointer, f'cannot establish current package; skip pruning: {exc}')
                     continue
-            keep = {p.name for _, p in packages[:2]}
-            if latest:
-                keep.add(latest)
+            keep = {latest} if latest else set()
+            for _, p in packages:
+                if len(keep) >= 2:
+                    break
+                keep.add(p.name)
             for _, p in packages:
                 if p.name not in keep:
                     remove_owned(p, group, 'dev')
-        logs = sorted((p for p in self.logs.iterdir() if p.is_file() and
-                       not p.is_symlink() and re.fullmatch(r'[0-9a-f]{32}\.log', p.name)),
-                      key=lambda p: p.stat().st_mtime_ns, reverse=True)
+        logs = []
+        for p in self.logs.glob('*.log'):
+            try:
+                meta = read_json(p.with_suffix('.json'))
+                if not p.is_symlink() and ID.fullmatch(p.stem) and meta == {'owner': OWNER, 'id': p.stem, 'kind': 'log'}:
+                    logs.append(p)
+                else:
+                    warn(p, 'unrecognized log; no deletion')
+            except (OSError, ValueError) as exc:
+                warn(p, str(exc))
+        logs.sort(key=lambda p: p.stat().st_mtime_ns, reverse=True)
         for p in logs[10:]:
             try:
                 p.unlink()
+                p.with_suffix('.json').unlink()
             except OSError as exc:
                 warn(p, str(exc))
 
@@ -227,6 +257,9 @@ class Store:
     def finish(self, job):
         try:
             with lock(self.base / 'registry.lock'):
+                if self.command_active(job):
+                    warn(job, 'command group still active; cleanup deferred')
+                    return
                 self.protect_symbols(job)
                 self.archive_log(job)
                 remove_owned(job, self.work, 'work')
@@ -260,6 +293,8 @@ def command_guardian(fd, log, command):
     temporary = Path(log).parent / 'tmp'
     temporary.mkdir(exist_ok=True)
     env.update({key: str(temporary) for key in ('TMPDIR', 'TMP', 'TEMP')})
+    active = Path(log).parent / 'command.json'
+    atomic_json(active, {'pgid': os.getpgrp()})
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
     errors = False
     carry = b''
@@ -281,6 +316,7 @@ def command_guardian(fd, log, command):
                 stream.truncate()
             stream.flush()
     code = process.wait()
+    active.unlink()
     os.close(fd)
     return code if code else (1 if errors else 0)
 
@@ -293,7 +329,7 @@ def run(command, job, fd):
     try:
         code = proc.wait()
         if code:
-            raise RuntimeError(f'command failed ({code}); log: {job / "raw.log"}')
+            raise RuntimeError(f'command failed ({code}); archived log: {job.parent.parent / "logs" / (job.name + ".log")}')
     finally:
         if proc.poll() is None:
             os.killpg(proc.pid, signal.SIGTERM)
@@ -302,6 +338,14 @@ def run(command, job, fd):
             except subprocess.TimeoutExpired:
                 os.killpg(proc.pid, signal.SIGKILL)
                 proc.wait()
+
+
+def digest(path):
+    result = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            result.update(block)
+    return result.hexdigest()
 
 
 def validate(package, target):
@@ -318,7 +362,7 @@ def validate(package, target):
             magic = stream.read(4)
         if path.stat().st_size < 16 or (target == 'pack' and magic != b'GDPC') or (target == 'windows' and magic[:2] != b'MZ'):
             raise ValueError(f'invalid export: {path}')
-    return {str(p.relative_to(package)): hashlib.sha256(p.read_bytes()).hexdigest()
+    return {str(p.relative_to(package)): digest(p)
             for p in package.rglob('*') if p.is_file()}
 
 
@@ -347,14 +391,16 @@ def build(store, args):
         # gameplay: that would access the user's persistent save directory.
         validator = job / 'validate.gd'
         validator.write_text('extends SceneTree\nfunc _init():\n'
-                             '\tfor path in ["res://scenes/main.tscn", "res://data/content.tres", "res://assets/art/title_graveyard.png"]:\n'
+                             '\tif not FileAccess.file_exists("res://scenes/main.tscn.remap"):\n\t\tquit(1)\n\t\treturn\n'
+                             '\tfor path in ["res://data/content.tres", "res://assets/art/title_graveyard.png"]:\n'
                              '\t\tif load(path) == null:\n\t\t\tquit(1)\n\t\t\treturn\n\tquit(0)\n')
-        pack = output if args.target == 'pack' else (next((output / 'Contents/Resources').glob('*.pck')) if args.target == 'macos' else None)
+        pack = output if args.target == 'pack' else (next((output / 'Contents/Resources').glob('*.pck')) if args.target == 'macos' else output)
         if pack:
             run([godot, '--headless', '--path', str(source), '--main-pack', str(pack),
                  '--script', str(validator), '--log-file', str(job / 'engine.log')], job, fd)
         if args.verify_only:
-            print('VERIFIED: temporary export; no package retained', flush=True)
+            print('VERIFIED: ' + json.dumps({'target': args.target, 'bytes': sum(p.stat().st_size for p in package.rglob('*') if p.is_file()), 'sha256': hashes}), flush=True)
+            print('Temporary verification export removed after this check.', flush=True)
             return
         kind = 'release' if args.release else 'dev'
         atomic_json(package / 'owner.json', {'owner': OWNER, 'id': job.name, 'kind': kind,

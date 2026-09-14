@@ -34,7 +34,7 @@ if '--import' in sys.argv:
     sys.exit(0)
 if '--export-pack' in sys.argv or '--export-debug' in sys.argv or '--export-release' in sys.argv:
     output = pathlib.Path(sys.argv[-1])
-    output.write_bytes(b'GDPC' + b'fixture' * 8)
+    output.write_bytes((b'BAD!' if (root / 'corrupt').exists() else (b'MZ00' if output.suffix == '.exe' else b'GDPC')) + b'fixture' * 8)
     if (root / 'symbol').exists():
         (output.parent / 'game.pdb').write_bytes(b'keep for crashes')
 '''
@@ -78,8 +78,8 @@ class CleanupTests(unittest.TestCase):
         for _ in range(12):
             self.run_build()
         self.assertEqual(len(self.packages()), 2)
-        self.assertEqual(len(list(self.store.logs.iterdir())), 10)
-        self.assertTrue(all(p.stat().st_size <= build.LIMIT for p in self.store.logs.iterdir()))
+        self.assertEqual(len(list(self.store.logs.glob('*.log'))), 10)
+        self.assertTrue(all(p.stat().st_size <= build.LIMIT for p in self.store.logs.glob('*.log')))
         pointer = self.store.base / 'latest-pack.json'
         before = pointer.read_bytes()
         hashes = {p.name: (p / 'RIFTFALL.pck').read_bytes() for p in self.packages()}
@@ -104,6 +104,57 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(len(list((self.store.releases / 'pack').iterdir())), 3)
         self.assertGreaterEqual(len(list(self.store.symbols.rglob('game.pdb'))), 3)
         self.assertEqual(len(self.packages()), 2)
+
+    def test_invalid_package_cannot_replace_existing_output(self):
+        self.run_build()
+        pointer = self.store.base / 'latest-pack.json'
+        before = pointer.read_bytes()
+        (self.root / 'corrupt').touch()
+        (self.root / 'symbol').touch()
+        self.run_build(ok=False)
+        self.assertTrue(list(self.store.symbols.rglob('game.pdb')))
+        self.assertEqual(pointer.read_bytes(), before)
+
+    def test_retention_separates_targets(self):
+        for _ in range(3):
+            self.run_build('--target', 'pack')
+            self.run_build('--target', 'windows')
+        self.assertEqual(len(list((self.store.dev / 'pack').iterdir())), 2)
+        self.assertEqual(len(list((self.store.dev / 'windows').iterdir())), 2)
+
+    def test_stale_power_loss_job_and_unowned_log(self):
+        job, lease, _ = self.store.create()
+        (job / 'partial-export').write_bytes(b'incomplete')
+        lease.__exit__(None, None, None)
+        foreign_log = self.store.logs / ('f' * 32 + '.log')
+        foreign_log.write_text('no provenance')
+        self.store.recover()
+        self.assertFalse(job.exists())
+        self.assertTrue(foreign_log.exists())
+
+    def test_source_and_managed_root_symlink_refused(self):
+        (self.root / 'assets' / 'external').symlink_to(self.fake)
+        self.run_build(ok=False)
+        linked_root = self.root / 'another-project'
+        linked_root.mkdir()
+        (linked_root / 'builds').symlink_to(self.store.base.parent)
+        with self.assertRaises(ValueError):
+            build.Store(linked_root)
+
+    def test_dead_guardian_live_engine_preserves_job(self):
+        process = self.start_sleeping()
+        job = next(self.store.work.iterdir())
+        pgid = json.loads((job / 'command.json').read_text())['pgid']
+        # Kill only guardian: build CLI must not remove its still-live child files.
+        os.kill(pgid, signal.SIGKILL)
+        self.assertNotEqual(process.wait(timeout=10), 0)
+        self.store.recover()
+        self.assertTrue(job.exists())
+        deadline = time.monotonic() + 10
+        while job.exists() and time.monotonic() < deadline:
+            time.sleep(.2)
+            self.store.recover()
+        self.assertFalse(job.exists())
 
     def test_verify_only_and_missing_tool(self):
         self.run_build('--verify-only')
