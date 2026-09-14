@@ -43,7 +43,10 @@ godot --headless --path . -- --stress-test
 ```
 
 Export presets are included for universal macOS and Windows Desktop builds. Install
-the matching Godot export templates, then export from **Project → Export**.
+the matching Godot export templates, then run `python3 tools/build.py build --target macos`
+or `python3 tools/build.py build --target windows`. See
+[`docs/BUILD_STORAGE.md`](docs/BUILD_STORAGE.md) for automatic cleanup, release
+archives, and manual GUI export exceptions.
 
 ## Controls
 

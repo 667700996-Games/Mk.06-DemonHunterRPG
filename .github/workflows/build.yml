@@ -1,0 +1,46 @@
+name: Build and cleanup
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Development export target
+        type: choice
+        options: [macos, windows, pack]
+        default: macos
+permissions:
+  contents: read
+jobs:
+  cleanup-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+      - name: Exercise lifecycle and retention
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 -m unittest discover -s tests -p 'test_build_cleanup.py' -v
+  package:
+    # Use installed, matching templates; never silently change the project engine.
+    # This opt-in job requires the documented runner label and a persistent checkout.
+    if: github.event_name == 'workflow_dispatch'
+    needs: cleanup-tests
+    runs-on: [self-hosted, macOS, godot-4.7.2]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # checkout's default git clean -ffdx would destroy ignored archives.
+          clean: false
+      - name: Verify engine
+        run: godot --version | python3 -c 'import sys; assert sys.stdin.read().startswith("4.7.2.stable"), "Install matching Godot 4.7.2 stable and export templates"'
+      - name: Build development package
+        env:
+          BUILD_TARGET: ${{ inputs.target }}
+        run: exec python3 tools/build.py build --target "$BUILD_TARGET"
+      - name: Recover stopped jobs and enforce retention
+        if: always()
+        run: python3 tools/build.py clean
